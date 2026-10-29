@@ -1,0 +1,16 @@
+unbound=/usr/sbin/unbound
+unbound_conf=/etc/unbound/unbound.conf
+add_file=
+pid_file=/run/unbound/unbound.pid
+unbound_control=/usr/sbin/unbound-control
+unbound_checkconf=/usr/sbin/unbound-checkconf
+init_script=unbound
+apply_mode=reload
+check_on_save=1
+show_defaults=1
+live_apply=1
+dashboard=1
+forwarder_flush=1
+pihole_api=
+unbound_addr=
+pihole_queries=100

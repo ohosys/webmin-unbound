@@ -1,0 +1,12 @@
+local=1
+forward=1
+stub=1
+auth=1
+rpz=1
+views=1
+opts=1
+acl=1
+control=1
+apply=1
+manual=1
+pihole=1

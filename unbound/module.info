@@ -1,0 +1,9 @@
+desc=Unbound DNS Server
+desc_it=Server DNS Unbound
+category=servers
+depends=init net
+syslog=1
+longdesc=Configure the Unbound validating, recursive and caching DNS resolver: local zones and records, forward, stub and authoritative zones, access control, DNSSEC and cache, and Pi-hole 6 when it uses Unbound.
+longdesc_it=Configura il resolver DNS Unbound (ricorsivo, con cache e validazione DNSSEC): zone e record locali, zone di inoltro, stub e autoritative, controllo accessi, DNSSEC e cache, e Pi-hole 6 quando usa Unbound.
+os_support=*-linux freebsd openbsd netbsd macos
+version=1.7

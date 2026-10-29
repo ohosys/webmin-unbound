@@ -1,0 +1,42 @@
+First version of this module, for configuring the Unbound DNS resolver.
+---- Changes since 1.0 ----
+Added Webmin integrations: System and Server Status monitors, dashboard status, System Logs, global search links and feedback files.
+Added bulk import of records from text, /etc/hosts or DHCP leases (ISC and Kea), with preview.
+Added RPZ blocklists and client views.
+Record and local zone changes are applied to the running server immediately via unbound-control, without a reload.
+The Check Configuration page now also diagnoses port 53 conflicts, the system resolver, DNSSEC and remote control, and can make the system use Unbound.
+---- Changes since 1.1 ----
+Works safely alongside Pi-hole (or dnsmasq) using Unbound as its upstream server: Pi-hole's cache is flushed after every change, so its clients see new records at once.
+Stop and Apply ask for confirmation when they would cut off Pi-hole, for example after moving Unbound's port or refusing 127.0.0.1 in access control.
+Unbound is no longer reloaded or restarted onto addresses already taken by another program, which used to leave it stopped.
+The Check Configuration page shows whether Pi-hole really forwards to Unbound, and no longer offers to point /etc/resolv.conf at Unbound when it isn't on port 53.
+Start now checks that Unbound is really running, and Stop waits for the old process to exit.
+Fixed the missing button on the system resolver confirmation page, and doubled links in the zone tables.
+---- Changes since 1.2 ----
+Forward and stub zones have new options to allow private addresses in answers (private-domain) and to skip DNSSEC validation (domain-insecure), both on by default for new zones. Without them, the private-address settings from the Pi-hole guide silently remove the answers of a router or internal DNS server.
+Check Configuration now also warns about internal zones losing their answers, log or zone files that AppArmor won't let Unbound write, unbound-resolvconf.service forwarding all queries, and so-rcvbuf or so-sndbuf larger than the kernel allows.
+---- Changes since 1.3 ----
+New Pi-hole pages for Pi-hole 6 on the same system : blocking on and off (also for a while), statistics and top lists, Gravity update, DNS restart, allowed and denied domains, blocklists, query log with allow and deny links, clients, network devices and DHCP leases. They use Pi-hole's API with its local CLI password, so no password is stored in Webmin.
+The Unbound link tab makes Unbound Pi-hole's only upstream server, and finds local zones (like casa.lan) that Pi-hole answers itself instead of asking Unbound, adding conditional forwarding rules for just those zones.
+Pi-hole status on the Webmin dashboard, and a "Pi-hole running" monitor for System and Server Status.
+Pi-hole DHCP leases can be imported as records into an Unbound local zone.
+Fixed reading the upstream servers from pihole.toml, which broke Pi-hole detection when dnsmasq config files were not present.
+New module icon.
+---- Changes since 1.4 ----
+Works on RHEL-family systems (Rocky, Alma, RHEL, Fedora): new settings go to /etc/unbound/conf.d/webmin.conf, and the Pi-hole pages no longer need the perl-JSON-PP package.
+The Check Configuration page warns when SELinux stops Unbound from listening on its port (TCP 5335 from the Pi-hole guide is reserved on RHEL), and shows the semanage command that fixes it. A failed start shows the same advice.
+The Check Configuration page warns about config files that Unbound never reads, like a Pi-hole guide file put in unbound.conf.d on a system that only includes conf.d.
+Pi-hole 5 is no longer supported; Pi-hole 6 is required for the Pi-hole pages.
+---- Changes since 1.5 ----
+New look: a header with the project logo and the state of Unbound and Pi-hole, a switch between the Unbound and Pi-hole parts, coloured statistic tiles, bars in the Pi-hole top lists, coloured query states and a diagram of the query path. Works with the Authentic theme (light and dark) and the gray theme. Without Pi-hole, only Unbound is shown.
+The same package now works on deb and rpm systems: new settings go in whichever directory the configuration really includes (unbound.conf.d on Debian, conf.d on RHEL/Fedora), and config files in a directory Unbound ignores can be included with one click.
+The address of Unbound used for Pi-hole can be set in the module configuration, as 127.0.0.1#5335, 127.0.0.1:5335, :5335 or just the port. By default it comes from Unbound's own configuration, whatever port the user chose.
+Conditional forwarding rules left pointing at an old Unbound port are now detected and replaced.
+Fixed remote control not being detected on Fedora, whose unbound.conf has an empty remote-control: section before the included one, so changes were not applied at once.
+With Pi-hole installed, the SELinux check says to turn SELinux off, as Pi-hole requires. Without Pi-hole it only warns about a blocked Unbound port.
+Fixed the boot-time page turning off start at boot when opened without a choice.
+---- Changes since 1.6 ----
+Security: the Pi-hole API address in the module configuration must be on this system, so Pi-hole's local CLI password is never sent to another machine.
+Security: the saved Pi-hole API session is now kept in Webmin's private data directory for the module (not in the config directory, which goes into configuration backups) and is never readable by other users, even while it is written.
+Bulk import now also checks the IP addresses read from /etc/hosts and DHCP lease files.
+Fixed the module configuration page, which showed one option wrongly because of a comma in its description.

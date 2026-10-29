@@ -1,0 +1,16 @@
+unbound=Programma server Unbound,0
+unbound_control=Programma unbound-control,0
+unbound_checkconf=Programma unbound-checkconf,0
+unbound_conf=Percorso completo di unbound.conf,0
+add_file=File per nuove opzioni e zone,3,File di configurazione principale
+init_script=Nome del servizio di avvio,3,Nessuno
+pid_file=File PID (se non indicato nella configurazione),0
+apply_mode=Come applicare le modifiche,1,reload-Ricarica con unbound-control (svuota la cache),keep-Ricarica mantenendo la cache (Unbound 1.18+),restart-Riavvia il servizio
+check_on_save=Verificare la configurazione dopo ogni modifica e annullarla in caso di errori?,1,1-Sì,0-No
+show_defaults=Mostrare i valori predefiniti nelle pagine delle opzioni?,1,1-Sì,0-No
+live_apply=Applicare subito al server in esecuzione le modifiche a record e zone locali?,1,1-Sì (tramite unbound-control),0-No
+dashboard=Mostrare lo stato di Unbound nella dashboard di Webmin?,1,1-Sì,0-No
+forwarder_flush=Svuotare la cache di Pi-hole o dnsmasq dopo le modifiche (quando usano Unbound)?,1,1-Sì,0-No
+pihole_api=Indirizzo dell'API di Pi-hole su questo sistema,3,Da pihole.toml
+unbound_addr=Indirizzo di Unbound usato da Pi-hole (es. 127.0.0.1#5335 o :5335),3,Dalla configurazione di Unbound
+pihole_queries=Query mostrate nel registro di Pi-hole,0,5
