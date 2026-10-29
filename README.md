@@ -4,6 +4,11 @@
 
 [English](README.en.md) · **Italiano**
 
+**⬇️ Download: [unbound.wbm.gz](https://github.com/ohosys/webmin-unbound/releases/latest/download/unbound.wbm.gz)** (ultima versione, da installare in Webmin; tutte le versioni nelle [release](https://github.com/ohosys/webmin-unbound/releases/latest)).
+
+> Non usare *Code → Download ZIP* né gli archivi *Source code* della release: contengono
+> tutto il repository, non il modulo, e Webmin risponde "missing a module.info file".
+
 Modulo Webmin (Perl, stesso stile dei moduli ufficiali) per gestire **Unbound**
 e, sulla stessa macchina, **Pi-hole 6** che lo usa come server a monte (la
 configurazione della [guida ufficiale](https://docs.pi-hole.net/guides/dns/unbound/)).
@@ -33,9 +38,12 @@ Pi-hole è facoltativo: senza, il modulo gestisce solo Unbound.
 
 ## Installazione
 
-1. Webmin → *Webmin Configuration* → *Webmin Modules* → *Install Module* →
-   *From uploaded file* → `dist/unbound-1.7.wbm.gz` (pronto in questo repository;
-   per ricostruirlo dai sorgenti: `./make-package.sh`).
+1. Webmin → *Webmin Configuration* → *Webmin Modules* → *Install Module*, poi:
+   - *From uploaded file*: il file [unbound.wbm.gz](https://github.com/ohosys/webmin-unbound/releases/latest/download/unbound.wbm.gz) scaricato dal link sopra
+     (è uguale a `dist/unbound-1.7.wbm.gz` di questo repository; per ricostruirlo dai
+     sorgenti: `./make-package.sh`);
+   - oppure *From ftp or http URL*: `https://github.com/ohosys/webmin-unbound/releases/latest/download/unbound.wbm.gz`
+     (serve che Webmin possa fare connessioni HTTPS, cioè il modulo Perl `Net::SSLeay`).
 2. Il modulo compare in *Servers → Unbound DNS Server*.
 3. Le nuove impostazioni vanno in un file a parte, creato al primo salvataggio:
    `/etc/unbound/unbound.conf.d/webmin.conf` su Debian/Ubuntu,
