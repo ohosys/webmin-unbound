@@ -2,6 +2,8 @@
 
 # <img src="branding/logo.svg" alt="" width="48" align="top"> Modulo Webmin per Unbound DNS e Pi-hole
 
+[English](README.en.md) · **Italiano**
+
 Modulo Webmin (Perl, stesso stile dei moduli ufficiali) per gestire **Unbound**
 e, sulla stessa macchina, **Pi-hole 6** che lo usa come server a monte (la
 configurazione della [guida ufficiale](https://docs.pi-hole.net/guides/dns/unbound/)).
@@ -388,6 +390,6 @@ dist/                    pacchetto installabile e SHA256SUMS
 tests/                   test del parser e del codec JSON (tests/run.sh)
 ```
 
-Licenza: BSD, come Webmin. Le icone delle opzioni provengono dal modulo `bind8` di
+Licenza: BSD 3-Clause, come Webmin (vedi [LICENSE](LICENSE) e [NOTICE](NOTICE)). Le icone delle opzioni provengono dal modulo `bind8` di
 Webmin. Logo e banner combinano i loghi di Webmin, Unbound (NLnet Labs) e Pi-hole,
 che restano dei rispettivi proprietari; il progetto non è affiliato a nessuno di loro.
