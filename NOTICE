@@ -1,6 +1,7 @@
 webmin-unbound
 Copyright (c) 2026, the webmin-unbound authors
 
-The page icons in unbound/images/*.gif come from the bind8 module of Webmin,
+The page icons in unbound/images/*.gif, except icon.gif (the project logo) and
+pihole.gif (drawn for this project), come from the bind8 module of Webmin,
 copyright Jamie Cameron and the Webmin project, and are used under the
 BSD 3-Clause License of Webmin.

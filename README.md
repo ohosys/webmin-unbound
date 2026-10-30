@@ -1,4 +1,4 @@
-<p align="center"><img src="branding/banner.png" alt="webmin-unbound: Webmin + Unbound + Pi-hole" width="100%"></p>
+<p align="center"><img src="branding/banner.png" alt="webmin-unbound" width="100%"></p>
 
 # <img src="branding/logo.svg" alt="" width="48" align="top"> Modulo Webmin per Unbound DNS e Pi-hole
 
@@ -22,7 +22,7 @@ upstream) e avvisa prima di qualunque modifica che lascerebbe la rete senza DNS.
 Per Unbound:
 zone e record locali, importazione in blocco, zone di inoltro, stub e
 autoritative, blocklist RPZ, viste per client, controllo accessi, DNSSEC, cache
-e statistiche. Interfaccia in inglese e italiano. Versione 1.7.
+e statistiche. Interfaccia in inglese e italiano. Versione 1.8.
 
 Distribuzioni provate: **Ubuntu 24.04** (deb), **Rocky Linux 9** e **Fedora 42** (rpm).
 Pi-hole è facoltativo: senza, il modulo gestisce solo Unbound.
@@ -40,7 +40,7 @@ Pi-hole è facoltativo: senza, il modulo gestisce solo Unbound.
 
 1. Webmin → *Webmin Configuration* → *Webmin Modules* → *Install Module*, poi:
    - *From uploaded file*: il file [unbound.wbm.gz](https://github.com/ohosys/webmin-unbound/releases/latest/download/unbound.wbm.gz) scaricato dal link sopra
-     (è uguale a `dist/unbound-1.7.wbm.gz` di questo repository; per ricostruirlo dai
+     (è uguale a `dist/unbound-1.8.wbm.gz` di questo repository; per ricostruirlo dai
      sorgenti: `./make-package.sh`);
    - oppure *From ftp or http URL*: `https://github.com/ohosys/webmin-unbound/releases/latest/download/unbound.wbm.gz`
      (serve che Webmin possa fare connessioni HTTPS, cioè il modulo Perl `Net::SSLeay`).
@@ -266,6 +266,9 @@ browser reale (pagine BIND, DNS client, Status e DHCP, e quelle di questo modulo
   standard non verificati (quello per RedHat è stato provato su Rocky 9).
 
 ## Test eseguiti
+**Versione 1.8.** Solo grafica: icone generiche al posto dei loghi di Unbound e Pi-hole
+nelle pagine del modulo, nuovo banner. Nessuna modifica alle funzioni.
+
 **Versione 1.7, controllo completo e sicurezza.** Webmin 2.670 e Pi-hole 6.
 - Ubuntu 24.04: tutte le pagine aperte con gli avvisi di Perl attivi, nessun errore;
   Rocky Linux 9: pacchetto installato e tutte le pagine aperte via HTTP, nessun errore
@@ -399,5 +402,7 @@ tests/                   test del parser e del codec JSON (tests/run.sh)
 ```
 
 Licenza: BSD 3-Clause, come Webmin (vedi [LICENSE](LICENSE) e [NOTICE](NOTICE)). Le icone delle opzioni provengono dal modulo `bind8` di
-Webmin. Logo e banner combinano i loghi di Webmin, Unbound (NLnet Labs) e Pi-hole,
-che restano dei rispettivi proprietari; il progetto non è affiliato a nessuno di loro.
+Webmin. Il logo del progetto riprende elementi dei loghi di Webmin, Unbound (NLnet Labs) e
+Pi-hole, che restano dei rispettivi proprietari. Webmin, Unbound e Pi-hole sono marchi
+dei rispettivi titolari: questo è un progetto indipendente, non affiliato né approvato
+da nessuno di loro.

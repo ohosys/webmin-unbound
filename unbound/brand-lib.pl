@@ -19,7 +19,7 @@ return <<'EOF';
 .ubx-sub{opacity:.72;font-size:12.5px}
 .ubx-pills{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
 .ubx-pill{display:inline-flex;align-items:center;gap:6px;padding:3px 11px;border-radius:13px;font-size:12px;background:rgba(127,127,127,.13);white-space:nowrap}
-.ubx-pill img{width:14px;height:14px}
+.ubx-pill i{font-size:12px!important}
 .ubx-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
 .ubx-ok{background:#1aa34a}.ubx-off{background:#d9534f}.ubx-mid{background:#f0ad4e}
 .ubx-switch{display:flex;flex-wrap:wrap;margin:0 0 14px;border-bottom:2px solid rgba(127,127,127,.18)}
@@ -28,7 +28,9 @@ return <<'EOF';
 .ubx-switch a.on{opacity:1}
 .ubx-switch a.u.on{border-color:#3164b4}
 .ubx-switch a.p.on{border-color:#c2101b}
-.ubx-switch img{width:18px;height:22px;object-fit:contain}
+.ubx-switch i{font-size:16px!important;width:18px;text-align:center}
+.ubx-switch a.u i{color:#3164b4}
+.ubx-switch a.p i{color:#c2101b}
 .ubx-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:10px;margin:0 0 14px}
 .ubx-tile{position:relative;border-radius:5px;color:#fff!important;padding:11px 14px 10px;overflow:hidden;min-height:74px;box-shadow:0 1px 2px rgba(0,0,0,.12)}
 .ubx-tile b{display:block;font-size:24px;font-weight:700;line-height:1.15;color:#fff}
@@ -80,10 +82,10 @@ my $showpi = &can_edit('pihole') && &pihole_installed_quick();
 if ($showpi) {
 	$rv .= "<div class='ubx-switch'>";
 	$rv .= "<a class='u".($part eq 'unbound' ? " on" : "").
-	       "' href='index.cgi'><img src='images/unbound-mark.svg' alt=''>".
+	       "' href='index.cgi'><i class='fa fa-server'></i>".
 	       "Unbound</a>";
 	$rv .= "<a class='p".($part eq 'pihole' ? " on" : "").
-	       "' href='pihole.cgi'><img src='images/pihole-logo.svg' alt=''>".
+	       "' href='pihole.cgi'><i class='fa fa-shield'></i>".
 	       "Pi-hole</a>";
 	$rv .= "</div>\n";
 	}
@@ -111,11 +113,9 @@ my $first = 1;
 foreach my $n (@$nodes) {
 	$rv .= "<div class='ubx-arrow'>&#10140;</div>" if (!$first);
 	$first = 0;
-	my $icon = $n->[0] eq 'unbound' ?
-			"<img src='images/unbound-mark.svg' alt=''>" :
-		   $n->[0] eq 'pihole' ?
-			"<img src='images/pihole-logo.svg' alt=''>" :
-			"<i class='fa fa-$n->[0]'></i>";
+	my $fa = $n->[0] eq 'unbound' ? 'server' :
+		 $n->[0] eq 'pihole' ? 'shield' : $n->[0];
+	my $icon = "<i class='fa fa-$fa'></i>";
 	$rv .= "<div class='ubx-node $n->[3]'>$icon<div><b>$n->[1]</b>".
 	       "<small>$n->[2]</small></div></div>";
 	}

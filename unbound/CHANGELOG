@@ -40,3 +40,5 @@ Security: the Pi-hole API address in the module configuration must be on this sy
 Security: the saved Pi-hole API session is now kept in Webmin's private data directory for the module (not in the config directory, which goes into configuration backups) and is never readable by other users, even while it is written.
 Bulk import now also checks the IP addresses read from /etc/hosts and DHCP lease files.
 Fixed the module configuration page, which showed one option wrongly because of a comma in its description.
+---- Changes since 1.7 ----
+The Unbound and Pi-hole pages use generic icons instead of the Unbound and Pi-hole logos.

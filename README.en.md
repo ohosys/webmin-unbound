@@ -1,4 +1,4 @@
-<p align="center"><img src="branding/banner.png" alt="webmin-unbound: Webmin + Unbound + Pi-hole" width="100%"></p>
+<p align="center"><img src="branding/banner.png" alt="webmin-unbound" width="100%"></p>
 
 # <img src="branding/logo.svg" alt="" width="48" align="top"> Webmin module for Unbound DNS and Pi-hole
 
@@ -22,7 +22,7 @@ any change that would leave the network without DNS.
 For Unbound:
 local zones and records, bulk import, forward, stub and authoritative zones, RPZ
 blocklists, client views, access control, DNSSEC, cache and statistics. User
-interface in English and Italian. Version 1.7.
+interface in English and Italian. Version 1.8.
 
 Tested on **Ubuntu 24.04** (deb), **Rocky Linux 9** and **Fedora 42** (rpm).
 Pi-hole is optional: without it, the module manages Unbound only.
@@ -40,7 +40,7 @@ It is integrated with the rest of Webmin like an official module:
 
 1. Webmin → *Webmin Configuration* → *Webmin Modules* → *Install Module*, then:
    - *From uploaded file*: the [unbound.wbm.gz](https://github.com/ohosys/webmin-unbound/releases/latest/download/unbound.wbm.gz) file downloaded from the link
-     above (the same as `dist/unbound-1.7.wbm.gz` in this repository; to rebuild it from
+     above (the same as `dist/unbound-1.8.wbm.gz` in this repository; to rebuild it from
      source: `./make-package.sh`);
    - or *From ftp or http URL*: `https://github.com/ohosys/webmin-unbound/releases/latest/download/unbound.wbm.gz`
      (Webmin must be able to make HTTPS connections, i.e. have the `Net::SSLeay` Perl module).
@@ -267,6 +267,9 @@ browser (BIND, DNS client, Status and DHCP pages, and those of this module).
 
 ## Tests
 
+**Version 1.8.** Graphics only: generic icons instead of the Unbound and Pi-hole logos
+in the module pages, new banner. No functional changes.
+
 **Version 1.7, full review and security.** Webmin 2.670 and Pi-hole 6.
 - Ubuntu 24.04: every page opened with Perl warnings on, no errors;
   Rocky Linux 9: package installed and every page opened over HTTP, no errors in the
@@ -397,6 +400,7 @@ tests/                   parser and JSON codec tests (tests/run.sh)
 ```
 
 License: BSD 3-Clause, like Webmin (see [LICENSE](LICENSE) and [NOTICE](NOTICE)).
-The option icons come from the Webmin `bind8` module. The logo and banner combine the
-logos of Webmin, Unbound (NLnet Labs) and Pi-hole, which remain the property of their
-owners; this project is not affiliated with any of them.
+The option icons come from the Webmin `bind8` module. The project logo uses elements of the
+Webmin, Unbound (NLnet Labs) and Pi-hole logos, which remain the property of their owners.
+Webmin, Unbound and Pi-hole are trademarks of their respective holders: this is an
+independent third-party project, not affiliated with or endorsed by any of them.

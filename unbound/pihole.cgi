@@ -32,7 +32,7 @@ my $upid = &is_unbound_running();
 print &brand_header('pihole', [
 	$blk->{'blocking'} eq 'enabled' ? [ 'ok', $text{'brand_pblocking'} ] :
 					  [ 'mid', $text{'brand_pnoblocking'} ],
-	[ undef, "<img src='images/pihole-logo.svg' alt=''>".
+	[ undef, "<i class='fa fa-shield'></i>".
 		 &html_escape("FTL $ftlver") ],
 	$upid ? [ 'ok', &text('brand_urunning',
 			      &find_server_value("port") || 53) ]
