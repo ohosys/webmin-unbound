@@ -120,6 +120,52 @@ Da sapere:
 - Se Pi-hole ha altri server a monte oltre a Unbound, la diagnostica lo
   segnala: per quelle risposte i record locali di Unbound non valgono.
 
+## Verifiche e correzioni da shell
+
+Gli stessi controlli di *Controlla configurazione*, da fare a mano come root (`su -` o
+`sudo -i`: con un semplice `su` il PATH non contiene `/usr/sbin` e `sysctl` "non si trova").
+
+**Pi-hole usa solo Unbound?** Avviso *Pi-hole also sends queries to servers other than Unbound*.
+
+```sh
+# Verifica: deve comparire solo 127.0.0.1#5335
+pihole-FTL --config dns.upstreams
+
+# Correzione: lascia Unbound come unico server upstream
+pihole-FTL --config dns.upstreams '["127.0.0.1#5335"]'
+
+# Per tornare indietro (Unbound più Cloudflare come riserva)
+pihole-FTL --config dns.upstreams '["127.0.0.1#5335","1.1.1.1","1.0.0.1"]'
+```
+
+Con Unbound come unico upstream, se Unbound si ferma la rete resta senza DNS: attiva il
+monitor *Unbound DNS Server* in *System and Server Status*. È lo stesso effetto del pulsante
+*Use Only Unbound* nella scheda *Pi-hole → Unbound link*.
+
+**Le risposte passano da Unbound e sono validate con DNSSEC?** (serve `dnsutils`)
+
+```sh
+dig @127.0.0.1 debian.org +short                    # deve dare indirizzi IP
+dig @127.0.0.1 dnssec-failed.org | grep status      # deve dare status: SERVFAIL
+```
+
+`SERVFAIL` vuol dire che Unbound ha rifiutato la firma sbagliata del dominio di prova; se
+compare `NOERROR` con un indirizzo, la richiesta è andata a un altro server.
+
+**Buffer dei socket.** Avviso *so-rcvbuf is … but the kernel limit net.core.rmem_max is only …*.
+
+```sh
+# Verifica
+/usr/sbin/sysctl net.core.rmem_max
+
+# Correzione, subito e dopo ogni riavvio (un comando per riga)
+/usr/sbin/sysctl -w net.core.rmem_max=1048576
+echo 'net.core.rmem_max=1048576' > /etc/sysctl.d/99-unbound.conf
+/usr/sbin/sysctl --system | grep rmem_max
+```
+
+Unbound usa il buffer più grande dal suo riavvio successivo.
+
 ## Distribuzioni deb e rpm
 
 Lo stesso pacchetto funziona su **Debian/Ubuntu** e su **Rocky/Alma/RHEL/Fedora**.

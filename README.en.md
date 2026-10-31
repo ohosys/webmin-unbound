@@ -120,6 +120,52 @@ Note:
 - If Pi-hole has upstream servers other than Unbound, diagnostics report it:
   Unbound local records do not apply to those answers.
 
+## Checks and fixes from the shell
+
+The same checks as *Check Configuration*, done by hand as root (`su -` or `sudo -i`: with a
+plain `su` the PATH lacks `/usr/sbin` and `sysctl` is "not found").
+
+**Does Pi-hole use only Unbound?** Warning *Pi-hole also sends queries to servers other than Unbound*.
+
+```sh
+# Check: only 127.0.0.1#5335 must be listed
+pihole-FTL --config dns.upstreams
+
+# Fix: make Unbound the only upstream server
+pihole-FTL --config dns.upstreams '["127.0.0.1#5335"]'
+
+# To go back (Unbound plus Cloudflare as a fallback)
+pihole-FTL --config dns.upstreams '["127.0.0.1#5335","1.1.1.1","1.0.0.1"]'
+```
+
+With Unbound as the only upstream, the network has no DNS if Unbound stops: enable the
+*Unbound DNS Server* monitor in *System and Server Status*. This is what the *Use Only
+Unbound* button does in the *Pi-hole → Unbound link* tab.
+
+**Do answers go through Unbound and get DNSSEC validation?** (needs `dnsutils`)
+
+```sh
+dig @127.0.0.1 debian.org +short                    # must return IP addresses
+dig @127.0.0.1 dnssec-failed.org | grep status      # must return status: SERVFAIL
+```
+
+`SERVFAIL` means Unbound rejected the deliberately broken signature of the test domain; if
+you get `NOERROR` with an address, the query went to another server.
+
+**Socket buffers.** Warning *so-rcvbuf is … but the kernel limit net.core.rmem_max is only …*.
+
+```sh
+# Check
+/usr/sbin/sysctl net.core.rmem_max
+
+# Fix, now and after every reboot (one command per line)
+/usr/sbin/sysctl -w net.core.rmem_max=1048576
+echo 'net.core.rmem_max=1048576' > /etc/sysctl.d/99-unbound.conf
+/usr/sbin/sysctl --system | grep rmem_max
+```
+
+Unbound uses the larger buffer from its next restart.
+
 ## deb and rpm distributions
 
 The same package works on **Debian/Ubuntu** and on **Rocky/Alma/RHEL/Fedora**.
