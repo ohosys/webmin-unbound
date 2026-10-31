@@ -1,0 +1,25 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Unbound (for unbound-checkconf)
+        run: sudo apt-get update -q && sudo apt-get install -y -q unbound
+      - name: Install Webmin sources and this module
+        run: sudo sh .github/scripts/setup-webmin.sh
+      - name: Perl syntax check
+        run: sudo sh .github/scripts/syntax-check.sh
+      - name: Tests
+        run: sudo sh tests/run.sh
+      - name: Package builds
+        run: sh make-package.sh && tar tzf unbound.wbm.gz unbound/module.info

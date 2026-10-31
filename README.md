@@ -22,7 +22,7 @@ upstream) e avvisa prima di qualunque modifica che lascerebbe la rete senza DNS.
 Per Unbound:
 zone e record locali, importazione in blocco, zone di inoltro, stub e
 autoritative, blocklist RPZ, viste per client, controllo accessi, DNSSEC, cache
-e statistiche. Interfaccia in inglese e italiano. Versione 1.9.
+e statistiche. Interfaccia in inglese e italiano. Versione 2.0.
 
 Distribuzioni provate: **Ubuntu 24.04** (deb), **Rocky Linux 9** e **Fedora 42** (rpm).
 Pi-hole è facoltativo: senza, il modulo gestisce solo Unbound.
@@ -40,8 +40,8 @@ Pi-hole è facoltativo: senza, il modulo gestisce solo Unbound.
 
 1. Webmin → *Webmin Configuration* → *Webmin Modules* → *Install Module*, poi:
    - *From uploaded file*: il file [unbound.wbm.gz](https://github.com/ohosys/webmin-unbound/releases/latest/download/unbound.wbm.gz) scaricato dal link sopra
-     (è uguale a `dist/unbound-1.9.wbm.gz` di questo repository; per ricostruirlo dai
-     sorgenti: `./make-package.sh`);
+     (lo costruisce GitHub Actions dai sorgenti a ogni release; per ricostruirlo a mano:
+     `./make-package.sh`);
    - oppure *From ftp or http URL*: `https://github.com/ohosys/webmin-unbound/releases/latest/download/unbound.wbm.gz`
      (serve che Webmin possa fare connessioni HTTPS, cioè il modulo Perl `Net::SSLeay`).
 2. Il modulo compare in *Servers → Unbound DNS Server*.
@@ -312,6 +312,16 @@ browser reale (pagine BIND, DNS client, Status e DHCP, e quelle di questo modulo
   standard non verificati (quello per RedHat è stato provato su Rocky 9).
 
 ## Test eseguiti
+**Versione 2.0.** Correzioni alla diagnostica e test automatici, nessuna nuova funzione
+(il numero passa da 1.9 a 2.0 e non a 1.10 perché Webmin confronta le versioni come
+numeri decimali, e 1.10 risulterebbe più vecchia di 1.9).
+*Controlla configurazione* non dice più che il sistema scavalca Pi-hole quando
+`/etc/resolv.conf` non ha righe `nameserver` (in quel caso il sistema usa il server
+locale); l'avviso sui buffer indica `/usr/sbin/sysctl` e il riavvio di Unbound; il
+pulsante *Usa solo Unbound* avvisa che Pi-hole resta senza riserva. Nuovo test
+`tests/resolver.pl`, `tests/labels.pl` controlla tutti i pulsanti, e GitHub Actions
+esegue i test a ogni push e crea la release a ogni tag `v*`.
+
 **Versione 1.9.** Il pulsante *Ferma Unbound* è di nuovo rosso con il tema Authentic:
 il suo testo era uguale ad altri testi del modulo e il tema a volte sceglieva lo stile sbagliato
 (verde con la spunta). Nuovo test `tests/labels.pl`.
@@ -447,8 +457,8 @@ unbound/
   lang/en, lang/it, config-<os>, config.info(.it), module.info, defaultacl
   images/                icone delle pagine (dal modulo bind8), logo e marchi SVG
 branding/                logo (SVG, PNG 512) e banner del progetto
-dist/                    pacchetto installabile e SHA256SUMS
-tests/                   test del parser e del codec JSON (tests/run.sh)
+.github/                 test automatici (GitHub Actions) e creazione delle release
+tests/                   test del parser, del codec JSON, del resolver e dei pulsanti (tests/run.sh)
 ```
 
 Licenza: BSD 3-Clause, come Webmin (vedi [LICENSE](LICENSE) e [NOTICE](NOTICE)). Le icone delle opzioni provengono dal modulo `bind8` di

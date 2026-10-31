@@ -22,7 +22,7 @@ any change that would leave the network without DNS.
 For Unbound:
 local zones and records, bulk import, forward, stub and authoritative zones, RPZ
 blocklists, client views, access control, DNSSEC, cache and statistics. User
-interface in English and Italian. Version 1.9.
+interface in English and Italian. Version 2.0.
 
 Tested on **Ubuntu 24.04** (deb), **Rocky Linux 9** and **Fedora 42** (rpm).
 Pi-hole is optional: without it, the module manages Unbound only.
@@ -40,8 +40,8 @@ It is integrated with the rest of Webmin like an official module:
 
 1. Webmin → *Webmin Configuration* → *Webmin Modules* → *Install Module*, then:
    - *From uploaded file*: the [unbound.wbm.gz](https://github.com/ohosys/webmin-unbound/releases/latest/download/unbound.wbm.gz) file downloaded from the link
-     above (the same as `dist/unbound-1.9.wbm.gz` in this repository; to rebuild it from
-     source: `./make-package.sh`);
+     above (built from source by GitHub Actions for every release; to rebuild it by hand:
+     `./make-package.sh`);
    - or *From ftp or http URL*: `https://github.com/ohosys/webmin-unbound/releases/latest/download/unbound.wbm.gz`
      (Webmin must be able to make HTTPS connections, i.e. have the `Net::SSLeay` Perl module).
 2. The module appears under *Servers → Unbound DNS Server*.
@@ -313,6 +313,15 @@ browser (BIND, DNS client, Status and DHCP pages, and those of this module).
 
 ## Tests
 
+**Version 2.0.** Diagnostics fixes and automatic tests, no new features (the number goes
+from 1.9 to 2.0 rather than 1.10 because Webmin compares versions as decimal numbers, so
+1.10 would look older than 1.9). *Check Configuration* no longer says this system bypasses
+Pi-hole when `/etc/resolv.conf` has no `nameserver` line (the system then uses the local
+server); the buffer warning gives `/usr/sbin/sysctl` and mentions restarting Unbound; the
+*Use Only Unbound* button warns that Pi-hole is left without a fallback. New test
+`tests/resolver.pl`, `tests/labels.pl` checks every button, and GitHub Actions runs the
+tests on every push and creates the release for every `v*` tag.
+
 **Version 1.9.** The *Stop Unbound* button is red again under the Authentic theme:
 its label was the same as other texts of the module, so the theme sometimes picked the wrong
 style (green with a tick). New test `tests/labels.pl`.
@@ -445,8 +454,8 @@ unbound/
   lang/en, lang/it, config-<os>, config.info(.it), module.info, defaultacl
   images/                page icons (from the bind8 module), SVG logo and marks
 branding/                project logo (SVG, PNG 512) and banner
-dist/                    installable package and SHA256SUMS
-tests/                   parser and JSON codec tests (tests/run.sh)
+.github/                 automatic tests (GitHub Actions) and release publishing
+tests/                   parser, JSON, resolver and button label tests (tests/run.sh)
 ```
 
 License: BSD 3-Clause, like Webmin (see [LICENSE](LICENSE) and [NOTICE](NOTICE)).

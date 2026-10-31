@@ -1,0 +1,41 @@
+name: Release
+
+# Push a tag like v2.0 (matching version= in unbound/module.info) to run the
+# tests, build the package and publish the GitHub release with both files.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check that the tag matches module.info
+        run: |
+          ver=$(sed -n 's/^version=//p' unbound/module.info)
+          [ "v$ver" = "$GITHUB_REF_NAME" ] || { echo "tag $GITHUB_REF_NAME but module.info says $ver"; exit 1; }
+          echo "VER=$ver" >> "$GITHUB_ENV"
+      - name: Install Unbound (for unbound-checkconf)
+        run: sudo apt-get update -q && sudo apt-get install -y -q unbound
+      - name: Install Webmin sources and this module
+        run: sudo sh .github/scripts/setup-webmin.sh
+      - name: Perl syntax check
+        run: sudo sh .github/scripts/syntax-check.sh
+      - name: Tests
+        run: sudo sh tests/run.sh
+      - name: Build package
+        run: |
+          sh make-package.sh
+          cp unbound.wbm.gz "unbound-$VER.wbm.gz"
+          echo "SUM=$(sha256sum unbound.wbm.gz | cut -d' ' -f1)" >> "$GITHUB_ENV"
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sh .github/scripts/release-notes.sh "$VER" "$SUM" > notes.md
+          gh release create "$GITHUB_REF_NAME" unbound.wbm.gz "unbound-$VER.wbm.gz" \
+            --title "webmin-unbound $VER" --notes-file notes.md --latest

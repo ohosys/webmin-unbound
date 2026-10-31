@@ -1888,12 +1888,13 @@ return 0 if (!$fw || !$fw->{'pid'} || !@{$fw->{'to_unbound'}});
 return &kill_logged('HUP', $fw->{'pid'}) ? 1 : 0;
 }
 
-# get_resolver_status()
+# get_resolver_status([file])
 # Returns a hash describing /etc/resolv.conf
 sub get_resolver_status
 {
+my ($f) = @_;
 my %rv;
-my $f = "/etc/resolv.conf";
+$f ||= "/etc/resolv.conf";
 $rv{'link'} = -l $f ? readlink($f) : undef;
 $rv{'resolved'} = $rv{'link'} && $rv{'link'} =~ /systemd\/resolve/ ? 1 : 0;
 my @ns;
@@ -1901,7 +1902,11 @@ foreach my $l (split(/\r?\n/, &read_file_contents($f))) {
 	push(@ns, $1) if ($l =~ /^\s*nameserver\s+(\S+)/);
 	}
 $rv{'nameservers'} = \@ns;
-$rv{'uses_local'} = (grep { $_ eq '127.0.0.1' || $_ eq '::1' } @ns) ? 1 : 0;
+# With no nameserver line at all, the C library asks the DNS server on this
+# machine (see resolv.conf(5)), so that counts as using the local server
+$rv{'none'} = @ns ? 0 : 1;
+$rv{'uses_local'} = !@ns ||
+	(grep { $_ eq '127.0.0.1' || $_ eq '::1' } @ns) ? 1 : 0;
 return %rv;
 }
 

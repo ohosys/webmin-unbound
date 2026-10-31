@@ -66,7 +66,8 @@ else {
 # System resolver
 my %res = &get_resolver_status();
 my $nslist = join(", ", map { "<tt>".&html_escape($_)."</tt>" }
-			    @{$res{'nameservers'}}) || "-";
+			    @{$res{'nameservers'}}) ||
+	     ($res{'none'} ? $text{'diag_resnone'} : "-");
 my $fw = &dns_forwarder();
 if ($fw && $port != 53) {
 	# Something like Pi-hole answers on port 53 and uses Unbound, so the

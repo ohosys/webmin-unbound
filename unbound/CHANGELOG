@@ -44,3 +44,8 @@ Fixed the module configuration page, which showed one option wrongly because of 
 The Unbound and Pi-hole pages use generic icons instead of the Unbound and Pi-hole logos.
 ---- Changes since 1.8 ----
 The Stop Unbound button is red again under the Authentic theme. Its label was shared with other texts, so the theme sometimes picked the wrong colour (green with a tick).
+---- Changes since 1.9 ----
+Check Configuration no longer reports that this system bypasses Pi-hole when /etc/resolv.conf has no nameserver line: in that case the system asks the local DNS server.
+The socket buffer warning gives the full path of sysctl, which plain su leaves out of root's PATH, and says that Unbound uses the new size from its next restart.
+The Use Only Unbound button warns that Pi-hole then has no fallback server.
+Two more button labels no longer match other texts, so the Authentic theme always styles them the same way.
