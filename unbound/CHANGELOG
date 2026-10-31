@@ -42,3 +42,5 @@ Bulk import now also checks the IP addresses read from /etc/hosts and DHCP lease
 Fixed the module configuration page, which showed one option wrongly because of a comma in its description.
 ---- Changes since 1.7 ----
 The Unbound and Pi-hole pages use generic icons instead of the Unbound and Pi-hole logos.
+---- Changes since 1.8 ----
+The Stop Unbound button is red again under the Authentic theme. Its label was shared with other texts, so the theme sometimes picked the wrong colour (green with a tick).

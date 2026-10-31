@@ -22,7 +22,7 @@ upstream) e avvisa prima di qualunque modifica che lascerebbe la rete senza DNS.
 Per Unbound:
 zone e record locali, importazione in blocco, zone di inoltro, stub e
 autoritative, blocklist RPZ, viste per client, controllo accessi, DNSSEC, cache
-e statistiche. Interfaccia in inglese e italiano. Versione 1.8.
+e statistiche. Interfaccia in inglese e italiano. Versione 1.9.
 
 Distribuzioni provate: **Ubuntu 24.04** (deb), **Rocky Linux 9** e **Fedora 42** (rpm).
 Pi-hole è facoltativo: senza, il modulo gestisce solo Unbound.
@@ -40,7 +40,7 @@ Pi-hole è facoltativo: senza, il modulo gestisce solo Unbound.
 
 1. Webmin → *Webmin Configuration* → *Webmin Modules* → *Install Module*, poi:
    - *From uploaded file*: il file [unbound.wbm.gz](https://github.com/ohosys/webmin-unbound/releases/latest/download/unbound.wbm.gz) scaricato dal link sopra
-     (è uguale a `dist/unbound-1.8.wbm.gz` di questo repository; per ricostruirlo dai
+     (è uguale a `dist/unbound-1.9.wbm.gz` di questo repository; per ricostruirlo dai
      sorgenti: `./make-package.sh`);
    - oppure *From ftp or http URL*: `https://github.com/ohosys/webmin-unbound/releases/latest/download/unbound.wbm.gz`
      (serve che Webmin possa fare connessioni HTTPS, cioè il modulo Perl `Net::SSLeay`).
@@ -266,6 +266,10 @@ browser reale (pagine BIND, DNS client, Status e DHCP, e quelle di questo modulo
   standard non verificati (quello per RedHat è stato provato su Rocky 9).
 
 ## Test eseguiti
+**Versione 1.9.** Il pulsante *Ferma Unbound* è di nuovo rosso con il tema Authentic:
+il suo testo era uguale ad altri testi del modulo e il tema a volte sceglieva lo stile sbagliato
+(verde con la spunta). Nuovo test `tests/labels.pl`.
+
 **Versione 1.8.** Solo grafica: icone generiche al posto dei loghi di Unbound e Pi-hole
 nelle pagine del modulo, nuovo banner. Nessuna modifica alle funzioni.
 

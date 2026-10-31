@@ -7,5 +7,6 @@ cp -a "$here/fixture/." "$tmp/"
 perl "$here/parser.pl" "$tmp"
 rc=$?
 perl "$here/json.pl" || rc=1
+perl "$here/labels.pl" || rc=1
 rm -rf "$tmp"
 exit $rc
