@@ -402,6 +402,52 @@ $pihole_last_error = $err;
 return $err ? undef : $d;
 }
 
+# pihole_require_post()
+# Pages that change Pi-hole only act on a form POST, so that a link or an
+# image on another site can't make the browser change anything
+sub pihole_require_post
+{
+$ENV{'REQUEST_METHOD'} eq 'POST' || &error($text{'pihole_epost'});
+}
+
+# pihole_file_dirs()
+# Directories that file:// lists may point into
+sub pihole_file_dirs
+{
+my $d = $config{'pihole_filedirs'};
+$d = "/etc/pihole" if (!defined($d) || $d !~ /\S/);
+return grep { /^\/\S*$/ } split(/\s+/, $d);
+}
+
+# pihole_valid_list_address(address)
+# Returns 1 if a list address is a http(s) URL, or a file:// URL for a file in
+# one of the allowed directories
+sub pihole_valid_list_address
+{
+my ($a) = @_;
+return 1 if ($a =~ /^https?:\/\/\S+$/);
+return 0 if ($a !~ /^file:\/\/(\/\S+)$/);
+my $p = $1;
+return 0 if ($p =~ /(^|\/)\.\.?(\/|$)/ || $p =~ /%/);
+foreach my $d (&pihole_file_dirs()) {
+	$d =~ s/\/+$//;
+	return 1 if (index($p, $d."/") == 0);
+	}
+return 0;
+}
+
+# pihole_quick_button(allow|deny, domain)
+# Returns a submit button for a form posting to pihole_domain.cgi that allows
+# or denies one domain
+sub pihole_quick_button
+{
+my ($type, $dom) = @_;
+return "<button type='submit' name='quick' class='btn btn-default btn-xs ui_submit' value='".
+       &html_escape("$type/exact/$dom")."'>".
+       $text{$type eq 'allow' ? 'pihole_qallow' : 'pihole_qdeny'}.
+       "</button>";
+}
+
 # pihole_path_part(string)
 # Encodes one part of an API path, like a domain or list URL
 sub pihole_path_part

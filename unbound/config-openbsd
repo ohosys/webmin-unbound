@@ -14,3 +14,5 @@ forwarder_flush=1
 pihole_api=
 unbound_addr=
 pihole_queries=100
+apply_rollback=1
+pihole_filedirs=/etc/pihole

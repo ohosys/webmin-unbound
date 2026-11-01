@@ -56,7 +56,6 @@ Check Configuration tests real DNSSEC answers: a signed domain must resolve and 
 Check Configuration warns when the automatic trust anchor hasn't been updated for a month, and checks the age of a root hints file if one is set.
 The Pi-hole link page shows the share of forwarded queries that Unbound really answered, from Pi-hole's statistics, with the other upstream servers.
 Once Unbound is Pi-hole's only upstream server, the Pi-hole link page offers to create a System and Server Status monitor for it.
----- Changes since 2.0 ----
 Fixed: changing or deleting an A or AAAA record left its reverse (PTR) record behind, pointing at the old address or at a name that no longer existed. The same happened when bulk import replaced a record or several records were deleted at once.
 Fixed: bulk import in record format took names with a dot as relative (nas.lan became nas.lan.lan.) and left short names in CNAME, NS, PTR, MX and SRV targets unqualified, so Unbound read "mx1" as the top-level name "mx1.". Both now follow the rule shown on the page; service names like _sip._tcp stay in the zone.
 Fixed: a TLS authentication name after a server address (9.9.9.9@853#dns.quad9.net) was read as a comment, so it disappeared from the form and was lost on the next save. Such an address is now refused unless DNS-over-TLS is on.
@@ -67,3 +66,11 @@ With Pi-hole, the Unbound cache tile says it counts only what gets past Pi-hole'
 Pi-hole: an invalid time when turning blocking off is refused, instead of turning blocking off until it is turned back on.
 Pi-hole query log: the domain filter finds the text anywhere in the name (Pi-hole only matched it exactly), and the column with the Allow and Deny links has a heading.
 Tests: the page rendering checks really fail now when a page shows an error (a list-context bug made them always pass), with new tests for the fixes above.
+Apply is safe on a system whose only DNS server is Unbound: if Unbound stops after loading the new configuration, the last configuration it ran with is put back and Unbound is started again, so DNS keeps working. The configuration that failed is kept in /etc/webmin/unbound/failed. This can be turned off in the module configuration.
+Changes to listening addresses, ports, protocols, threads, user or chroot now make Apply restart Unbound instead of reloading it. A reload keeps the old sockets, so a wrong address only failed at the next restart or reboot, when nothing could put the old configuration back.
+An Unbound process that has exited but not yet been reaped is no longer taken as running.
+A save that fails no longer leaves an empty webmin.conf behind: the file is only created when something is written to it.
+Pi-hole pages that change something only accept a form POST, so a link or an image on another site cannot change Pi-hole. The Allow and Deny links in the query log and domain search are now buttons.
+Pi-hole file:// lists must point to a file in /etc/pihole, or in the directories set in the module configuration, and cannot use "..".
+Flushing one name from Unbound's cache says that Pi-hole's whole cache was cleared too, because Pi-hole cannot remove a single name.
+Tests: new tests/rollback.pl runs a real Unbound and checks that a failed apply puts back the working configuration.

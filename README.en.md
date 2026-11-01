@@ -313,9 +313,24 @@ browser (BIND, DNS client, Status and DHCP pages, and those of this module).
 
 ## Tests
 
-**Version 2.0.** Diagnostics fixes and automatic tests, no new features (the number goes
+**Version 2.0.** Safer Apply, fixes and automatic tests (the number goes
 from 1.9 to 2.0 rather than 1.10 because Webmin compares versions as decimal numbers, so
-1.10 would look older than 1.9). *Check Configuration* no longer says this system bypasses
+1.10 would look older than 1.9). *Apply Configuration* is safe even when Unbound is the
+network's only DNS server: if Unbound stops after loading the new configuration, the module
+puts back the last one it ran with, starts it again and keeps the failed one in
+`/etc/webmin/unbound/failed`. Tested with a real Unbound (`tests/rollback.pl`). Changes to
+addresses, ports, protocols, user or chroot make Unbound restart instead of reload: on a
+reload Unbound keeps its old sockets, so a wrong address only showed up at the next restart.
+An authoritative or RPZ zone whose zone file does not exist is refused. Pi-hole: pages that
+change something only accept a POST from their own form (*Allow* and *Deny* in the query log
+are now buttons), `file://` lists must be in `/etc/pihole` (or the directories set in the
+module configuration), an invalid time for pausing blocking is refused, and the query log
+filter finds the text anywhere in the name. Also fixed: PTR records left behind when an A
+record was changed or deleted; record-format import turning `nas.lan` into `nas.lan.lan.`;
+the TLS name in `9.9.9.9@853#dns.quad9.net` lost on the next save; `private-domain`,
+`domain-insecure` and `respip` lines left after deleting zones; an empty `webmin.conf` left
+by a failed save. The page rendering checks in the tests always passed because of a bug in
+the test itself: they now really fail, and more were added. *Check Configuration* no longer says this system bypasses
 Pi-hole when `/etc/resolv.conf` has no `nameserver` line (the system then uses the local
 server); the buffer warning gives `/usr/sbin/sysctl` and mentions restarting Unbound; the
 *Use Only Unbound* button warns that Pi-hole is left without a fallback. Three save bugs

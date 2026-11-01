@@ -362,11 +362,7 @@ foreach my $r (@{$ql->{'queries'} || [ ]}) {
 	next if ($in{'qstatus'} eq 'permitted' && $isb);
 	last if (@rows >= $len);
 	my $dom = $r->{'domain'};
-	my $act = $isb ?
-		&ui_link("pihole_domain.cgi?add=1&list=allow/exact&domain=".
-			 &urlize($dom), $text{'pihole_qallow'}) :
-		&ui_link("pihole_domain.cgi?add=1&list=deny/exact&domain=".
-			 &urlize($dom), $text{'pihole_qdeny'});
+	my $act = &pihole_quick_button($isb ? "allow" : "deny", $dom);
 	push(@rows, [
 		&make_date(int($r->{'time'})),
 		&html_escape($r->{'type'}),
@@ -383,11 +379,14 @@ foreach my $r (@{$ql->{'queries'} || [ ]}) {
 		$act,
 		]);
 	}
+print &ui_form_start("pihole_domain.cgi", "post");
+print &ui_hidden("return", "queries");
 print &ui_columns_table([ $text{'pihole_qtime'}, $text{'record_type'},
 			  $text{'pihole_domain'}, $text{'pihole_qclient'},
 			  $text{'pihole_qstatus'}, $text{'pihole_qreply'},
 			  $text{'pihole_upstream'}, $text{'pihole_qaction'} ],
 			100, \@rows, undef, 0, undef, $text{'pihole_noqueries'});
+print &ui_form_end();
 print &ui_tabs_end_tab('mode', 'queries');
 
 ######################################################################

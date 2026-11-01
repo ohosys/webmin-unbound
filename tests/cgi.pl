@@ -251,5 +251,25 @@ $page = &run("delete_zones.cgi", "", "type=rpz&d=rpz.test.&delete=1");
 $c = &read_conf();
 &ok(scalar(!&failed($page) && $c !~ /respip/ && $c !~ /rpz:/), "delete_zones: respip removed with the last RPZ") || print $c, &text_of($page);
 
+# webmin.conf in an included directory is only created when something goes in it
+my $cdir = "$tmp/conf.d";
+mkdir($cdir);
+unlink("$cdir/webmin.conf");
+open(my $ifh, ">", $conf) || die; print $ifh "server:\n\tinterface: 127.0.0.1\n\tport: 5335\ninclude: \"$cdir/*.conf\"\n"; close($ifh);
+$page = &run("save_auth.cgi", "", "new=1&old=&name=auth.test&primaries=&urls=&notify=&zonefile_def=0&zonefile=/nonexistent/auth.zone&downstream=&upstream=&fallback=");
+&ok(scalar(&failed($page) && !-e "$cdir/webmin.conf"), "failed save leaves no empty webmin.conf") || print &text_of($page);
+$page = &run("save_fwd.cgi", "", "type=forward&new=1&old=&name=new.test&addrs=1.1.1.1&hosts=&first=&tls=&nocache=&privdom=0&insecure=0");
+my $wc = -e "$cdir/webmin.conf" ? do { local $/; open(my $w, "<", "$cdir/webmin.conf"); <$w> } : "";
+&ok(scalar(!&failed($page) && $wc =~ /name: "new\.test\."/), "new zone goes into webmin.conf in the included directory") || print $wc, &text_of($page);
+unlink("$cdir/webmin.conf");
+
+# Pages that change Pi-hole only act on a POST from their own form
+$page = &run("pihole_domain.cgi", "quick=deny/exact/ads.example.com&return=queries");
+&ok(scalar($page =~ /only accepts changes sent from its form/), "pihole_domain: a GET link changes nothing") || print &text_of($page);
+$page = &run("pihole_list.cgi", "", "add=1&type=block&address=".&enc("file:///etc/shadow")."&comment=");
+&ok(scalar($page =~ /is not a http/), "pihole_list: file:// outside the allowed directories rejected") || print &text_of($page);
+$page = &run("pihole_list.cgi", "", "add=1&type=block&address=".&enc("file:///etc/pihole/../shadow")."&comment=");
+&ok(scalar($page =~ /is not a http/), "pihole_list: file:// with .. rejected") || print &text_of($page);
+
 print $fails ? "\n$fails CGI test(s) FAILED\n" : "\nCGI tests passed\n";
 exit($fails ? 1 : 0);

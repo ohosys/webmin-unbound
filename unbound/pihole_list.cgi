@@ -6,6 +6,7 @@ require './pihole-lib.pl';
 &ReadParse();
 &error_setup($text{'pihole_lerr'});
 &can_edit('pihole') || &error($text{'pihole_ecannot'});
+&pihole_require_post();
 
 if ($in{'add'}) {
 	$in{'type'} =~ /^(block|allow)$/ || &error($text{'pihole_elist'});
@@ -13,8 +14,10 @@ if ($in{'add'}) {
 			 split(/\r?\n/, $in{'address'});
 	@addrs || &error($text{'pihole_enoaddress'});
 	foreach my $a (@addrs) {
-		$a =~ /^(https?|file):\/\/\S+$/ ||
-			&error(&text('pihole_eaddress', &html_escape($a)));
+		&pihole_valid_list_address($a) ||
+			&error(&text('pihole_eaddress', &html_escape($a),
+			     join(" ", map { "<tt>".&html_escape($_)."</tt>" }
+					   &pihole_file_dirs())));
 		}
 	my ($d, $err) = &pihole_api("POST", "/lists?type=$in{'type'}",
 		{ 'address' => \@addrs, 'comment' => $in{'comment'},

@@ -35,8 +35,12 @@ print &ui_columns_table([ $text{'pihole_matchtype'}, $text{'pihole_matchwhat'},
 			  $text{'pihole_dtype'}, $text{'pihole_enabled'} ],
 			100, \@rows, undef, 0, undef,
 			$text{'pihole_nomatch'});
-print &ui_link("pihole_domain.cgi?add=1&return=domains&list=allow/exact&domain=".
-	       &urlize($dom), $text{'pihole_qallow'})," | ",
-      &ui_link("pihole_domain.cgi?add=1&return=domains&list=deny/exact&domain=".
-	       &urlize($dom), $text{'pihole_qdeny'}),"<p>\n";
+if (&valid_domain($dom) && $dom !~ /\*/) {
+	print &ui_form_start("pihole_domain.cgi", "post");
+	print &ui_hidden("return", "domains");
+	print &pihole_quick_button("allow", $dom)," ",
+	      &pihole_quick_button("deny", $dom);
+	print &ui_form_end();
+	print "<p>\n";
+	}
 &ui_print_footer("pihole.cgi?mode=domains", $text{'pihole_return'});
