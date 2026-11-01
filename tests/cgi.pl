@@ -9,7 +9,7 @@ use File::Temp qw(tempdir);
 my $mod = "/opt/webmin/unbound";
 my $cfile = "/etc/webmin/unbound/config";
 my $fails = 0;
-sub ok { my ($c, $m) = @_; print(($c ? "ok  " : "FAIL")." $m\n"); $fails++ if (!$c); return $c; }
+sub ok { my ($c, $m) = (scalar(shift), shift); print(($c ? "ok  " : "FAIL")." $m\n"); $fails++ if (!$c); return $c; }
 
 # Scratch Unbound config, with no blank lines between clauses
 my $tmp = tempdir(CLEANUP => 1);
@@ -70,7 +70,8 @@ open(my $b, ">", $tmpin) || die; print $b $body; close($b);
 my $page = `cd $mod && perl $script < $tmpin 2>&1`;
 return $page;
 }
-sub failed { my ($p) = @_; return $p =~ /<h1>Error|Error\s*:|Failed to/ ? 1 : 0; }
+sub text_of { my ($p) = @_; $p =~ s/<script.*?<\/script>//gs; $p =~ s/<[^>]+>/ /g; $p =~ s/\s+/ /g; return "PAGE: ".substr($p, 0, 1500)."\n"; }
+sub failed { my ($p) = @_; return $p =~ /Access denied|<title>[^<]*Error|<h1>Error|Error\s*:|Failed to|Security Warning/ ? 1 : 0; }
 
 # Every page renders
 &write_conf();
@@ -95,9 +96,10 @@ foreach my $p ([ "index.cgi", "" ], [ "check.cgi", "" ], [ "control.cgi", "" ],
 my $page = &run("save_fwd.cgi", "", "type=forward&old=example.org.&".
 		"name=example.org.&addrs=&hosts=dns.quad9.net&first=&tls=&nocache=");
 my $c = &read_conf();
-&ok(!&failed($page), "save_fwd: saved");
-&ok($c !~ /forward-addr: 1.1.1.1/, "save_fwd: emptied address list is removed");
-&ok($c =~ /name: "example.org."\n\tforward-host: dns.quad9.net\nstub-zone:/,
+&ok(!&failed($page), "save_fwd: saved") || print &text_of($page);
+&ok($c !~ /forward-addr: 1.1.1.1/, "save_fwd: emptied address list is removed") ||
+	print $c, &text_of($page);
+&ok(scalar($c =~ /name: "example.org."\n\tforward-host: dns.quad9.net\nstub-zone:/),
     "save_fwd: new host stays in its own zone") || print $c;
 
 # Adding a record puts it in server:
@@ -105,7 +107,7 @@ my $c = &read_conf();
 $page = &run("save_record.cgi", "", "zone=lan.&new=1&type=A&name=pc&ttl_def=1&value=192.168.1.20");
 $c = &read_conf();
 &ok(!&failed($page), "save_record: saved");
-&ok($c =~ /^server:\n(?:\t[^\n]*\n)*?\tlocal-data: "pc\.lan\.[^\n]*192\.168\.1\.20"\n(?:\t[^\n]*\n)*forward-zone:/,
+&ok(scalar($c =~ /^server:\n(?:\t[^\n]*\n)*?\tlocal-data: "pc\.lan\.[^\n]*192\.168\.1\.20"\n(?:\t[^\n]*\n)*forward-zone:/),
     "save_record: record added inside server:") || print $c;
 
 # Saving an options page without changing anything leaves the file as it is
