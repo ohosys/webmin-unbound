@@ -318,7 +318,12 @@ numeri decimali, e 1.10 risulterebbe più vecchia di 1.9).
 *Controlla configurazione* non dice più che il sistema scavalca Pi-hole quando
 `/etc/resolv.conf` non ha righe `nameserver` (in quel caso il sistema usa il server
 locale); l'avviso sui buffer indica `/usr/sbin/sysctl` e il riavvio di Unbound; il
-pulsante *Usa solo Unbound* avvisa che Pi-hole resta senza riserva. Nuovo test
+pulsante *Usa solo Unbound* avvisa che Pi-hole resta senza riserva.
+Corretti tre errori nel salvataggio: svuotare gli indirizzi o gli host di una zona di
+inoltro (o URL e primari di zone autoritative e RPZ) lasciava le righe vecchie; una riga
+aggiunta subito dopo aver cancellato l'ultima di una zona poteva finire nella zona dopo;
+salvare una pagina di opzioni senza modifiche riscriveva valori solo citati in modo diverso.
+Nuovo test `tests/cgi.pl`, che esegue tutte le pagine del modulo e alcuni salvataggi. Nuovo test
 `tests/resolver.pl`, `tests/labels.pl` controlla tutti i pulsanti, e GitHub Actions
 esegue i test a ogni push e crea la release a ogni tag `v*`.
 
@@ -458,7 +463,7 @@ unbound/
   images/                icone delle pagine (dal modulo bind8), logo e marchi SVG
 branding/                logo (SVG, PNG 512) e banner del progetto
 .github/                 test automatici (GitHub Actions) e creazione delle release
-tests/                   test del parser, del codec JSON, del resolver e dei pulsanti (tests/run.sh)
+tests/                   test del parser, del codec JSON, del resolver, dei pulsanti e delle pagine (tests/run.sh)
 ```
 
 Licenza: BSD 3-Clause, come Webmin (vedi [LICENSE](LICENSE) e [NOTICE](NOTICE)). Le icone delle opzioni provengono dal modulo `bind8` di

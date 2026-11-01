@@ -318,7 +318,11 @@ from 1.9 to 2.0 rather than 1.10 because Webmin compares versions as decimal num
 1.10 would look older than 1.9). *Check Configuration* no longer says this system bypasses
 Pi-hole when `/etc/resolv.conf` has no `nameserver` line (the system then uses the local
 server); the buffer warning gives `/usr/sbin/sysctl` and mentions restarting Unbound; the
-*Use Only Unbound* button warns that Pi-hole is left without a fallback. New test
+*Use Only Unbound* button warns that Pi-hole is left without a fallback. Three save bugs
+fixed: emptying the addresses or hosts of a forward zone (or the URLs and primaries of an
+authoritative or RPZ zone) left the old lines; a line added right after deleting a zone's last
+line could land in the next zone; saving an unchanged options page rewrote values that were
+only quoted differently. New test `tests/cgi.pl` runs every page of the module and some saves. New test
 `tests/resolver.pl`, `tests/labels.pl` checks every button, and GitHub Actions runs the
 tests on every push and creates the release for every `v*` tag.
 
@@ -455,7 +459,7 @@ unbound/
   images/                page icons (from the bind8 module), SVG logo and marks
 branding/                project logo (SVG, PNG 512) and banner
 .github/                 automatic tests (GitHub Actions) and release publishing
-tests/                   parser, JSON, resolver and button label tests (tests/run.sh)
+tests/                   parser, JSON, resolver, button label and page tests (tests/run.sh)
 ```
 
 License: BSD 3-Clause, like Webmin (see [LICENSE](LICENSE) and [NOTICE](NOTICE)).

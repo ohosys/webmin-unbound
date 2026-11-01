@@ -52,6 +52,23 @@ my $before = &read_file_contents("$dir/main.conf");
 &flush_file_lines();
 &rollback_change();
 ok(&read_file_contents("$dir/main.conf") eq $before, "rollback restores file");
+# Deleting a clause's last line, then adding to that clause, with no blank
+# line before the next clause
+open(my $nb, ">", "$dir/noblank.conf") || die;
+print $nb "forward-zone:\n\tname: \"a.\"\n\tforward-addr: 1.1.1.1\nforward-zone:\n\tname: \"b.\"\n";
+close($nb);
+$config{'unbound_conf'} = "$dir/noblank.conf";
+&clear_config_cache();
+&begin_change();
+my $za = &find_zone_clause("forward-zone", "a.");
+&save_directives([ $za ], "forward-addr", [ ]);
+&save_directives([ $za ], "forward-host", [ "dns.example" ], $za);
+&commit_change(1);
+ok(&read_file_contents("$dir/noblank.conf") eq
+   "forward-zone:\n\tname: \"a.\"\n\tforward-host: dns.example\nforward-zone:\n\tname: \"b.\"\n",
+   "line added after deleting a clause's last line stays in that clause");
+$config{'unbound_conf'} = "$dir/main.conf";
+&clear_config_cache();
 # Quoting / injection
 eval { local $main::error_must_die = 1; &quote_value("a\nb"); };
 ok($@ =~ /line breaks/, "newline rejected: ".($@ =~ /line breaks/ ? "yes" : $@));

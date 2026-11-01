@@ -49,3 +49,6 @@ Check Configuration no longer reports that this system bypasses Pi-hole when /et
 The socket buffer warning gives the full path of sysctl, which plain su leaves out of root's PATH, and says that Unbound uses the new size from its next restart.
 The Use Only Unbound button warns that Pi-hole then has no fallback server.
 Two more button labels no longer match other texts, so the Authentic theme always styles them the same way.
+Fixed: removing all addresses or hosts of a forward or stub zone (for example to switch from addresses to hosts), or all URLs and primaries of an authoritative or RPZ zone, left the old lines in place.
+Fixed: a line added to a zone right after its last line was deleted could land in the next zone when there was no blank line between them.
+Saving an options page without changes no longer rewrites lines that are only quoted differently (like auto-trust-anchor-file in Debian's own file), and no longer creates an empty server: section.

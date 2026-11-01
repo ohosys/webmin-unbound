@@ -72,7 +72,8 @@ if ($in{'new'}) {
 	}
 else {
 	# Update in place, one directive name at a time
-	my %byname;
+	# Lists the user emptied must still be saved, so their old lines go
+	my %byname = ( $t."-addr" => [ ], $t."-host" => [ ] );
 	foreach my $d (@dirs) {
 		push(@{$byname{$d->[0]}}, $d->[1]) if ($d->[1] ne '');
 		$byname{$d->[0]} ||= [ ];

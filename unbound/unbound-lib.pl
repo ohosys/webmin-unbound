@@ -361,6 +361,10 @@ sub update_directive
 my ($d, $value) = @_;
 &check_raw_value($value);
 return if ($d->{'value'} eq $value);
+# Same tokens, only quoted differently : keep the line as it is, so files
+# owned by distribution packages are not rewritten for nothing
+return if (join("\0", @{$d->{'values'}}) eq
+	   join("\0", &split_values($value)));
 my $lref = &read_file_lines($d->{'file'});
 $lref->[$d->{'line'}] = &directive_line($d, $value);
 $d->{'value'} = $value;
@@ -385,6 +389,18 @@ else {
 	}
 my $c = $d->{'clause'};
 $c->{'members'} = [ grep { $_ ne $d } @{$c->{'members'}} ];
+if (!$d->{'prefix'} && $c->{'file'} eq $d->{'file'} &&
+    $c->{'eline'} == $d->{'line'}) {
+	# This was the clause's last line, which now holds whatever came next
+	# (maybe the next clause's header), so the clause ends at its last
+	# remaining line in this file
+	my $end = $c->{'line'};
+	foreach my $m (@{$c->{'members'}}) {
+		$end = $m->{'line'}
+			if ($m->{'file'} eq $c->{'file'} && $m->{'line'} > $end);
+		}
+	$c->{'eline'} = $end;
+	}
 }
 
 # add_directive(&clause, name, raw-value, [&after-dir])
@@ -418,10 +434,12 @@ if ($file eq $c->{'file'} && $line > $c->{'eline'}) {
 return $d;
 }
 
-# save_directives(&clauses, name, &raw-values, [&clause-for-new])
+# save_directives(&clauses, name, &raw-values, [&clause-for-new|&code])
 # Makes a directive in a set of clauses have exactly the given values.
 # Existing lines are updated in place, extra ones deleted, and new ones added
-# after the last existing one (or at the end of the clause for new).
+# after the last existing one (or at the end of the clause for new). The clause
+# for new lines can be a function, called only if a line has to be added, so
+# a save that changes nothing creates nothing.
 sub save_directives
 {
 my ($clauses, $name, $values, $newclause) = @_;
@@ -436,6 +454,7 @@ for(my $i=0; $i<@old || $i<@$values; $i++) {
 		&delete_directive($old[$i]);
 		}
 	else {
+		$newclause = &$newclause() if (ref($newclause) eq 'CODE');
 		my $c = $last ? $last->{'clause'} :
 			$newclause || $clauses->[0] || &get_default_server();
 		$last = &add_directive($c, $name, $values->[$i], $last);
@@ -449,7 +468,7 @@ sub save_server
 {
 my ($name, $values) = @_;
 &save_directives([ &find_clauses("server") ], $name, $values,
-		 &get_default_server());
+		 \&get_default_server);
 }
 
 # get_add_file()
@@ -616,6 +635,10 @@ if (!$nocheck && $config{'check_on_save'} ne '0') {
 		&error($text{'echeck_rollback'}."<br>\n<pre>".
 		       &html_escape(join("\n", @errs))."</pre>");
 		}
+	}
+# Don't leave behind an add file that this change created but didn't use
+foreach my $f (keys %change_created) {
+	&unlink_file($f) if (-e $f && !-s $f);
 	}
 &unlock_all_files();
 $change_active = 0;

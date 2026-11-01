@@ -50,7 +50,9 @@ foreach my $o (@opts) {
 my @clauses = &find_clauses($cname);
 my $newclause;
 if ($cname eq 'server') {
-	$newclause = &get_default_server();
+	# Only made if an option has to be added, so saving an unchanged
+	# page leaves the files alone
+	$newclause = \&get_default_server;
 	}
 elsif (@clauses) {
 	$newclause = $clauses[0];

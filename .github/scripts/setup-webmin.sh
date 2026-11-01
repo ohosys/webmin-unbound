@@ -19,3 +19,9 @@ lang=en
 EOF
 echo "root=/opt/webmin" > /etc/webmin/miniserv.conf
 cp /opt/webmin/unbound/config-debian-linux /etc/webmin/unbound/config
+# The Debian/Ubuntu package config uses this trust anchor, which the service
+# normally creates on its first start
+if [ ! -s /var/lib/unbound/root.key ] && [ -s /usr/share/dns/root.key ]; then
+	mkdir -p /var/lib/unbound
+	cp /usr/share/dns/root.key /var/lib/unbound/root.key
+fi

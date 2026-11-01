@@ -84,7 +84,8 @@ if ($in{'new'}) {
 	&create_clause("rpz", [ grep { $_->[1] ne '' } @dirs ]);
 	}
 else {
-	my %byname;
+	# Lists the user emptied must still be saved, so their old lines go
+	my %byname = ( $pname => [ ], "url" => [ ] );
 	foreach my $d (@dirs) {
 		push(@{$byname{$d->[0]}}, $d->[1]) if ($d->[1] ne '');
 		$byname{$d->[0]} ||= [ ];
