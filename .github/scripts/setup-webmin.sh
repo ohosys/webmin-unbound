@@ -20,7 +20,7 @@ EOF
 echo "root=/opt/webmin" > /etc/webmin/miniserv.conf
 # root may use this module (the CGI tests run the pages as root)
 echo "root:x:0" > /etc/webmin/miniserv.users
-echo "root: unbound" > /etc/webmin/webmin.acl
+echo "root: unbound status" > /etc/webmin/webmin.acl
 cp /opt/webmin/unbound/config-debian-linux /etc/webmin/unbound/config
 # The Debian/Ubuntu package config uses this trust anchor, which the service
 # normally creates on its first start

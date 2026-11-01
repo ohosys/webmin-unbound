@@ -169,6 +169,30 @@ print &ui_table_row($text{'pihole_linkstate'},
 	@only ? &warnc($text{'pihole_linkmixed'}) :
 		&bad($text{'pihole_linknone'}));
 
+# Which upstream servers really answered, from Pi-hole's own statistics
+my $ustats = &pihole_get("/stats/upstreams") || { };
+my @fwd = sort { $b->{'count'} <=> $a->{'count'} }
+	  grep { $_->{'port'} > 0 && $_->{'count'} > 0 }
+	       @{$ustats->{'upstreams'} || [ ]};
+my $ftot = 0;
+$ftot += $_->{'count'} foreach (@fwd);
+if ($ftot) {
+	my ($ub) = grep { $want && $_->{'ip'}.($_->{'port'} == 53 ? "" :
+				"#".$_->{'port'}) eq $want } @fwd;
+	my $pct = $ub ? int(100 * $ub->{'count'} / $ftot + 0.5) : 0;
+	my $msg = &text('pihole_sharepct', $pct, $ub ? $ub->{'count'} : 0,
+			$ftot);
+	my @others = map { "<tt>".&html_escape($_->{'ip'}.
+			   ($_->{'port'} == 53 ? "" : "#".$_->{'port'})).
+			   "</tt> ".int(100 * $_->{'count'} / $ftot + 0.5)."%" }
+			 grep { $_ ne ($ub || "") } @fwd;
+	print &ui_table_row($text{'pihole_share'},
+		($pct >= 100 ? &good($msg) : $pct >= 50 ? &warnc($msg)
+						       : &bad($msg)).
+		(@others ? "<br>".&text('pihole_shareothers',
+					join(", ", @others)) : ""));
+	}
+
 my $rev = &pihole_config("dns/revServers") || [ ];
 my @hidden = &hidden_local_zones($rev);
 print &ui_table_row($text{'pihole_zones'},
@@ -191,6 +215,14 @@ if ($want && !(@only && @$ups == 1)) {
 if ($want && @hidden) {
 	print &ui_buttons_row("pihole_unbound.cgi", $text{'pihole_fixzones'},
 		$text{'pihole_fixzonesdesc'}, [ [ "do", "zones" ] ]);
+	}
+# With Unbound as the only upstream, nothing answers if it stops, so offer a
+# monitor that warns about it
+if (@only && @$ups == 1 && &foreign_available("status") &&
+    !&has_unbound_monitor()) {
+	print &ui_buttons_row("../status/edit_mon.cgi", $text{'pihole_monitor'},
+		$text{'pihole_monitordesc'},
+		[ [ "type", $module_name."::up" ] ]);
 	}
 print &ui_buttons_end();
 print &ui_tabs_end_tab('mode', 'unbound');

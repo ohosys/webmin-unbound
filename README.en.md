@@ -322,7 +322,13 @@ server); the buffer warning gives `/usr/sbin/sysctl` and mentions restarting Unb
 fixed: emptying the addresses or hosts of a forward zone (or the URLs and primaries of an
 authoritative or RPZ zone) left the old lines; a line added right after deleting a zone's last
 line could land in the next zone; saving an unchanged options page rewrote values that were
-only quoted differently. New test `tests/cgi.pl` runs every page of the module and some saves. New test
+only quoted differently. New test `tests/cgi.pl` runs every page of the module and some saves.
+New features: *Check Configuration* really tests DNSSEC (a signed domain must resolve and
+`dnssec-failed.org`, signed wrongly on purpose, must be refused) both on Unbound and through
+Pi-hole, warns when the trust anchor hasn't been updated for a month and checks the age of a
+root hints file; the Pi-hole link page shows the share of queries Unbound really answered
+and, once Unbound is the only upstream server, offers to create the *System and Server Status*
+monitor. New test `tests/pihole.pl`, with a stand-in for the Pi-hole API. New test
 `tests/resolver.pl`, `tests/labels.pl` checks every button, and GitHub Actions runs the
 tests on every push and creates the release for every `v*` tag.
 

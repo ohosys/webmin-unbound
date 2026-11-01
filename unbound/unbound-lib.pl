@@ -2141,4 +2141,60 @@ splice(@mods, $i, 0, "respip");
 &save_server("module-config", [ "\"".join(" ", @mods)."\"" ]);
 }
 
+# dnssec_probe(server, port, name)
+# Sends one A query with the DNSSEC OK bit. Returns ( status, ad-flag ), or
+# ( undef ) if no answer came back.
+sub dnssec_probe
+{
+my ($server, $port, $name) = @_;
+return ( ) if (!&has_command("dig"));
+my $out = &backquote_command(
+	"dig +time=3 +tries=1 +dnssec +noall +comments -p ".quotemeta($port).
+	" \@".quotemeta($server)." ".quotemeta($name)." A 2>&1 </dev/null");
+return ( ) if ($out !~ /status:\s*([A-Z]+)/);
+my $status = $1;
+my ($flags) = $out =~ /;;\s*flags:([^;]*);/;
+return ( $status, ($flags || "") =~ /\bad\b/ ? 1 : 0 );
+}
+
+# dnssec_check(server, port, [need-ad])
+# Checks that a resolver validates DNSSEC: a signed domain resolves, and a
+# domain whose signature is broken on purpose fails. Returns ( 'ok' | 'bad' |
+# 'warn' | undef, status of the broken domain ). undef means the test can't
+# tell, usually because there's no Internet access.
+our @dnssec_test_names = ( "isc.org", "dnssec-failed.org" );
+sub dnssec_check
+{
+my ($server, $port, $needad) = @_;
+my ($gs, $gad) = &dnssec_probe($server, $port, $dnssec_test_names[0]);
+return ( undef, $gs ) if (!$gs || $gs ne 'NOERROR');
+my ($bs) = &dnssec_probe($server, $port, $dnssec_test_names[1]);
+return ( undef, $bs ) if (!$bs);
+return ( 'bad', $bs ) if ($bs eq 'NOERROR');
+return ( 'warn', $bs ) if ($bs ne 'SERVFAIL');
+return ( 'warn', 'noad' ) if ($needad && !$gad);
+return ( 'ok', $bs );
+}
+
+# file_age_days(file)
+# Returns how many days ago a file was last changed, or undef if it's missing
+sub file_age_days
+{
+my @st = stat($_[0]);
+return undef if (!@st);
+return int((time() - $st[9]) / 86400);
+}
+
+# has_unbound_monitor()
+# Returns 1 if System and Server Status already has a monitor for Unbound
+sub has_unbound_monitor
+{
+return 0 if (!&foreign_installed("status"));
+&foreign_require("status");
+foreach my $s (&status::list_services()) {
+	return 1 if ($s->{'type'} =~ /^\Q$module_name\E::(up|query)$/);
+	}
+return 0;
+}
+
 1;

@@ -323,6 +323,13 @@ Corretti tre errori nel salvataggio: svuotare gli indirizzi o gli host di una zo
 inoltro (o URL e primari di zone autoritative e RPZ) lasciava le righe vecchie; una riga
 aggiunta subito dopo aver cancellato l'ultima di una zona poteva finire nella zona dopo;
 salvare una pagina di opzioni senza modifiche riscriveva valori solo citati in modo diverso.
+Nuove funzioni: *Controlla configurazione* prova davvero il DNSSEC (un dominio firmato
+deve rispondere e `dnssec-failed.org`, con la firma rotta di proposito, deve essere
+rifiutato) sia su Unbound sia passando da Pi-hole, avvisa se il trust anchor non si
+aggiorna da un mese e controlla l'età del file root hints; la pagina del collegamento
+Pi-hole mostra la quota di richieste servite davvero da Unbound e, quando Unbound è
+l'unico server a monte, propone di creare il monitor in *System and Server Status*.
+Nuovo test `tests/pihole.pl`, con un finto server API di Pi-hole.
 Nuovo test `tests/cgi.pl`, che esegue tutte le pagine del modulo e alcuni salvataggi. Nuovo test
 `tests/resolver.pl`, `tests/labels.pl` controlla tutti i pulsanti, e GitHub Actions
 esegue i test a ogni push e crea la release a ogni tag `v*`.

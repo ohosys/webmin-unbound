@@ -110,8 +110,58 @@ elsif (!-r $anchor) {
 					    "</tt>") ]);
 	}
 else {
-	print &ui_columns_row([ $text{'diag_dnssec'}, $ok,
-		&text('diag_anchorok', "<tt>".&html_escape($anchor)."</tt>") ]);
+	# Unbound rewrites an automatic trust anchor every few days, when it
+	# checks the root key, so an old file means it can't update it
+	my $age = &file_age_days($anchor);
+	my $auto = &find_server_value("auto-trust-anchor-file") ? 1 : 0;
+	if ($auto && $running && defined($age) && $age > 30) {
+		print &ui_columns_row([ $text{'diag_dnssec'}, $warn,
+			&text('diag_anchorold', "<tt>".&html_escape($anchor).
+						"</tt>", $age) ]);
+		}
+	else {
+		print &ui_columns_row([ $text{'diag_dnssec'}, $ok,
+			&text('diag_anchorok', "<tt>".&html_escape($anchor).
+					       "</tt>") ]);
+		}
+	}
+
+# Root hints file, if one is set instead of Unbound's built-in list
+my $hints = &find_server_value("root-hints");
+if ($hints) {
+	my $age = &file_age_days($hints);
+	my $h = "<tt>".&html_escape($hints)."</tt>";
+	print &ui_columns_row([ $text{'diag_hints'},
+		!defined($age) ? $bad : $age > 180 ? $warn : $ok,
+		!defined($age) ? &text('diag_hintsmissing', $h) :
+		$age > 180 ? &text('diag_hintsold', $h, $age) :
+			     &text('diag_hintsok', $h, $age) ]);
+	}
+
+# Real DNSSEC answers, from Unbound and from a forwarder like Pi-hole
+if ($running && &has_command("dig")) {
+	my @via = ( [ "Unbound", "127.0.0.1", $port, 1 ] );
+	my $fwd = &dns_forwarder();
+	push(@via, [ $fwd->{'name'}, "127.0.0.1", 53, 0 ])
+		if ($fwd && $port != 53);
+	foreach my $v (@via) {
+		my ($res, $st) = &dnssec_check($v->[1], $v->[2], $v->[3]);
+		my $who = &html_escape($v->[0]);
+		print &ui_columns_row([ &text('diag_dnstest', $who),
+			!$res ? "-" : $res eq 'ok' ? $ok :
+			$res eq 'bad' ? $bad : $warn,
+			!$res ? &text('diag_dnstestnonet', $who,
+				      $dnssec_test_names[0]) :
+			$res eq 'ok' ? &text('diag_dnstestok', $who,
+					     $dnssec_test_names[1]) :
+			$res eq 'bad' ? &text($v->[3] ? 'diag_dnstestbad'
+						      : 'diag_dnstestbadfwd',
+					      $who, $dnssec_test_names[1]) :
+			$st eq 'noad' ? &text('diag_dnstestnoad', $who,
+					      $dnssec_test_names[0]) :
+			&text('diag_dnstestodd', $who, $dnssec_test_names[1],
+			      &html_escape($st)) ]);
+		}
 	}
 
 # Remote control

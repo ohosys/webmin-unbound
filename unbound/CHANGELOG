@@ -52,3 +52,7 @@ Two more button labels no longer match other texts, so the Authentic theme alway
 Fixed: removing all addresses or hosts of a forward or stub zone (for example to switch from addresses to hosts), or all URLs and primaries of an authoritative or RPZ zone, left the old lines in place.
 Fixed: a line added to a zone right after its last line was deleted could land in the next zone when there was no blank line between them.
 Saving an options page without changes no longer rewrites lines that are only quoted differently (like auto-trust-anchor-file in Debian's own file), and no longer creates an empty server: section.
+Check Configuration tests real DNSSEC answers: a signed domain must resolve and dnssec-failed.org, whose signature is broken on purpose, must be refused, both by Unbound and through Pi-hole, so another upstream server answering in Pi-hole's place shows up.
+Check Configuration warns when the automatic trust anchor hasn't been updated for a month, and checks the age of a root hints file if one is set.
+The Pi-hole link page shows the share of forwarded queries that Unbound really answered, from Pi-hole's statistics, with the other upstream servers.
+Once Unbound is Pi-hole's only upstream server, the Pi-hole link page offers to create a System and Server Status monitor for it.
