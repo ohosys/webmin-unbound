@@ -53,6 +53,10 @@ if (!$in{'zonefile_def'}) {
 	$zf =~ /^[^\s"'#]+$/ || &error($text{'auth_ezonefile'});
 	}
 @prims || @urls || $zf ne '' || &error($text{'auth_enone'});
+# With no primary or URL to fetch it from, Unbound must read the zone file at
+# startup, and fails to start (or to reload) when it is missing
+!@prims && !@urls && !&zone_file_present($zf) &&
+	&error(&text('auth_enofile', &html_escape($zf)));
 foreach my $f ('downstream', 'upstream', 'fallback') {
 	$in{$f} eq '' || $in{$f} eq 'yes' || $in{$f} eq 'no' ||
 		&error($text{'fwd_eyesno'});

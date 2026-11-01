@@ -87,7 +87,7 @@ foreach my $p ([ "index.cgi", "" ], [ "check.cgi", "" ], [ "control.cgi", "" ],
 	       [ "edit_manual.cgi", "" ],
 	       map { [ "edit_opts.cgi", "page=$_" ] } qw(net perf sec log rc)) {
 	my $page = &run(@$p);
-	&ok(!&failed($page) && $page =~ /<\/html>/i, "page $p->[0]?$p->[1]");
+	&ok(scalar(!&failed($page) && $page =~ /<\/html>|pre_footer_hr/i), "page $p->[0]?$p->[1]");
 	}
 
 # Replacing a forward zone's addresses with a host removes the old address
@@ -160,6 +160,96 @@ foreach my $pg (qw(net perf sec log rc)) {
 	    "save_opts page=$pg without changes leaves the file alone") ||
 		print "----- before\n$before----- after\n$after-----\n";
 	}
+
+
+# Reverse records follow their A record when it is changed or deleted
+sub rec_form
+{
+my ($name) = @_;
+my $page = &run("edit_local.cgi", "zone=lan.");
+my $q;
+while ($page =~ /href=["']edit_record\.cgi\?([^"']+)["'][^>]*>\s*\Q$name\E\s*</g) {
+	my $l = $1; $l =~ s/&amp;/&/g;
+	if ($l =~ /id=/) { $q = $l; last; }
+	}
+return ( ) if (!$q);
+my $form = &run("edit_record.cgi", $q);
+my ($id) = $form =~ /name=["']id["'][^>]*value=["']([^"']*)/;
+my ($old) = $form =~ /name=["']old["'][^>]*value=["']([^"']*)/;
+foreach my $v ($id, $old) {
+	$v =~ s/&quot;/"/g; $v =~ s/&#39;/'/g; $v =~ s/&amp;/&/g;
+	}
+return ( $id, $old );
+}
+sub enc { my $v = shift; $v =~ s/([^A-Za-z0-9\-_.~])/sprintf("%%%02X", ord($1))/ge; return $v; }
+&write_conf();
+&run("save_record.cgi", "", "zone=lan.&new=1&type=A&name=pc&ttl_def=1&value=192.168.1.20&rev=1");
+$c = &read_conf();
+&ok(scalar($c =~ /local-data-ptr: "192\.168\.1\.20 pc\.lan\."/), "save_record: reverse record added") || print $c;
+my ($rid, $rold) = &rec_form("pc");
+&ok(scalar($rid), "edit_record: form for the A record found");
+$page = &run("save_record.cgi", "", "zone=lan.&new=&type=A&id=".&enc($rid)."&old=".&enc($rold)."&name=pc&ttl_def=1&value=192.168.1.21");
+$c = &read_conf();
+&ok(scalar(!&failed($page) && $c =~ /local-data-ptr: "192\.168\.1\.21 pc\.lan\."/ && $c !~ /192\.168\.1\.20/),
+    "save_record: reverse record moved to the new address") || print $c, &text_of($page);
+($rid, $rold) = &rec_form("pc");
+$page = &run("save_record.cgi", "", "zone=lan.&new=&type=A&id=".&enc($rid)."&old=".&enc($rold)."&delete=1");
+$c = &read_conf();
+&ok(scalar(!&failed($page) && $c !~ /local-data-ptr/ && $c !~ /pc\.lan/),
+    "save_record: deleting the A record also deletes its reverse record") || print $c, &text_of($page);
+
+# Bulk import : dotted names are complete, short targets go in the zone, and
+# a replaced record takes its reverse record with it
+&write_conf();
+&run("save_batch.cgi", "", "zone=lan.&source=text&format=hosts&text=".&enc("192.168.1.30 box")."&ptr=1&dup=skip&ttl_def=1&import=1");
+&ok(scalar(&read_conf() =~ /local-data-ptr: "192\.168\.1\.30 box\.lan\."/), "save_batch: reverse record imported");
+$page = &run("save_batch.cgi", "", "zone=lan.&source=text&format=rr&text=".
+	&enc("mx1.lan A 192.168.1.40\n\@ MX 10 mx1\nwww CNAME box\n_sip._tcp SRV 1 2 5060 box\nbox A 192.168.1.31").
+	"&ptr=0&dup=replace&ttl_def=1&import=1");
+$c = &read_conf();
+&ok(scalar(!&failed($page)), "save_batch: imported") || print &text_of($page);
+&ok(scalar($c =~ /"mx1\.lan\. IN A 192\.168\.1\.40"/), "save_batch: name with a dot is complete") || print $c;
+&ok(scalar($c =~ /"lan\. IN MX 10 mx1\.lan\."/), "save_batch: MX target put in the zone") || print $c;
+&ok(scalar($c =~ /"www\.lan\. IN CNAME box\.lan\."/), "save_batch: CNAME target put in the zone") || print $c;
+&ok(scalar($c =~ /"_sip\._tcp\.lan\. IN SRV 1 2 5060 box\.lan\."/), "save_batch: SRV target put in the zone") || print $c;
+&ok(scalar($c =~ /"box\.lan\. IN A 192\.168\.1\.31"/ && $c !~ /192\.168\.1\.30/),
+    "save_batch: replaced record's reverse record removed") || print $c;
+$page = &run("save_batch.cgi", "", "zone=lan.&source=text&format=rr&text=".&enc("bad MX x")."&ptr=0&dup=skip&ttl_def=1&preview=1");
+&ok(scalar($page =~ /reject 1 invalid/i), "save_batch: MX without preference rejected") || print &text_of($page);
+
+# Deleting forward zones from the list leaves no private-domain or
+# domain-insecure behind
+&write_conf();
+&run("save_fwd.cgi", "", "type=forward&new=1&old=&name=home.arpa&addrs=192.168.1.1&hosts=&first=&tls=&nocache=&privdom=1&insecure=1");
+$c = &read_conf();
+&ok(scalar($c =~ /private-domain: "home\.arpa"/), "save_fwd: private-domain added") || print $c;
+$page = &run("delete_zones.cgi", "", "type=forward&d=home.arpa.&delete=1");
+$c = &read_conf();
+&ok(scalar(!&failed($page) && $c !~ /home\.arpa/), "delete_zones: zone and its private-domain/domain-insecure removed") || print $c, &text_of($page);
+
+# A TLS authentication name needs TLS, and survives editing
+&write_conf();
+$page = &run("save_fwd.cgi", "", "type=forward&new=1&old=&name=quad9.test&addrs=".&enc("9.9.9.9\@853#dns.quad9.net")."&hosts=&first=&tls=&nocache=&privdom=0&insecure=0");
+&ok(scalar($page =~ /DNS-over-TLS/ && &read_conf() !~ /quad9/), "save_fwd: #name without TLS rejected") || print &text_of($page);
+$page = &run("save_fwd.cgi", "", "type=forward&new=1&old=&name=quad9.test&addrs=".&enc("9.9.9.9\@853#dns.quad9.net")."&hosts=&first=&tls=yes&nocache=&privdom=0&insecure=0");
+my $fform = &run("edit_fwd.cgi", "type=forward&name=quad9.test.");
+&ok(scalar(!&failed($page) && $fform =~ /9\.9\.9\.9\@853#dns\.quad9\.net/), "edit_fwd: TLS name kept when the zone is shown again") || print &read_conf();
+
+# Auth zones need their zone file when nothing downloads it
+&write_conf();
+$page = &run("save_auth.cgi", "", "new=1&old=&name=auth.test&primaries=&urls=&notify=&zonefile_def=0&zonefile=/nonexistent/auth.zone&downstream=&upstream=&fallback=");
+&ok(scalar($page =~ /does not exist/ && &read_conf() !~ /auth-zone/), "save_auth: missing zone file rejected") || print &text_of($page);
+
+# RPZ : deleting the last one takes respip out of module-config again
+&write_conf();
+my $zf = "$tmp/rpz.zone";
+open(my $zfh, ">", $zf) || die; print $zfh "\$ORIGIN rpz.test.\n\@ 3600 IN SOA a. b. 1 3600 600 86400 300\n\@ 3600 IN NS localhost.\n"; close($zfh);
+$page = &run("save_rpz.cgi", "", "new=1&old=&name=rpz.test&urls=&primaries=&zonefile_def=0&zonefile=".&enc($zf)."&action=&cname_def=1&cname=&log=&logname_def=1&logname=&ra=");
+$c = &read_conf();
+&ok(scalar(!&failed($page) && $c =~ /module-config: "respip/), "save_rpz: respip added") || print $c, &text_of($page);
+$page = &run("delete_zones.cgi", "", "type=rpz&d=rpz.test.&delete=1");
+$c = &read_conf();
+&ok(scalar(!&failed($page) && $c !~ /respip/ && $c !~ /rpz:/), "delete_zones: respip removed with the last RPZ") || print $c, &text_of($page);
 
 print $fails ? "\n$fails CGI test(s) FAILED\n" : "\nCGI tests passed\n";
 exit($fails ? 1 : 0);

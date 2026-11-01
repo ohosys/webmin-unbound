@@ -23,8 +23,13 @@ else {
 	}
 
 my @live = $old ? &record_live_names($old) : ( );
+# Reverse records made for an A or AAAA record follow it, so none are left
+# pointing at an old address or a deleted name
+my @oldptrs = $old ? &reverse_records_for($old) : ( );
+push(@live, map { &record_live_names($_) } @oldptrs);
 if ($in{'delete'}) {
 	&delete_directive($old->{'dir'});
+	&delete_directive($_->{'dir'}) foreach (@oldptrs);
 	&commit_change();
 	&live_sync_names(@live);
 	&webmin_log("delete", "record", $zname,
@@ -114,6 +119,12 @@ else {
 	$newval = &local_data_value($name, $ttl, $type, $data);
 	push(@live, $name);
 	&save_or_add("local-data", $old, $newval);
+	foreach my $p (@oldptrs) {
+		# Point the reverse record at the new address and name
+		&update_directive($p->{'dir'},
+			&local_data_ptr_value($v, $name, $p->{'ttl'}));
+		push(@live, &reverse_name($v));
+		}
 
 	# Also add a reverse record, if requested
 	if ($in{'new'} && $in{'rev'} && ($type eq 'A' || $type eq 'AAAA')) {

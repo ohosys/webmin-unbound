@@ -56,3 +56,14 @@ Check Configuration tests real DNSSEC answers: a signed domain must resolve and 
 Check Configuration warns when the automatic trust anchor hasn't been updated for a month, and checks the age of a root hints file if one is set.
 The Pi-hole link page shows the share of forwarded queries that Unbound really answered, from Pi-hole's statistics, with the other upstream servers.
 Once Unbound is Pi-hole's only upstream server, the Pi-hole link page offers to create a System and Server Status monitor for it.
+---- Changes since 2.0 ----
+Fixed: changing or deleting an A or AAAA record left its reverse (PTR) record behind, pointing at the old address or at a name that no longer existed. The same happened when bulk import replaced a record or several records were deleted at once.
+Fixed: bulk import in record format took names with a dot as relative (nas.lan became nas.lan.lan.) and left short names in CNAME, NS, PTR, MX and SRV targets unqualified, so Unbound read "mx1" as the top-level name "mx1.". Both now follow the rule shown on the page; service names like _sip._tcp stay in the zone.
+Fixed: a TLS authentication name after a server address (9.9.9.9@853#dns.quad9.net) was read as a comment, so it disappeared from the form and was lost on the next save. Such an address is now refused unless DNS-over-TLS is on.
+Fixed: deleting forward or stub zones from the zone list left their private-domain and domain-insecure lines behind, and deleting the last RPZ zone left respip in module-config.
+An authoritative or RPZ zone that only has a zone file is refused when the file does not exist, because Unbound would fail to start or reload with it (unbound-checkconf 1.26 does not catch this).
+Cache and Statistics says the memory use is not reported, instead of 0 bytes, when extended-statistics is off.
+With Pi-hole, the Unbound cache tile says it counts only what gets past Pi-hole's cache, which is why its rate is low.
+Pi-hole: an invalid time when turning blocking off is refused, instead of turning blocking off until it is turned back on.
+Pi-hole query log: the domain filter finds the text anywhere in the name (Pi-hole only matched it exactly), and the column with the Allow and Deny links has a heading.
+Tests: the page rendering checks really fail now when a page shows an error (a list-context bug made them always pass), with new tests for the fixes above.

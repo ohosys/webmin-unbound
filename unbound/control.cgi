@@ -48,10 +48,14 @@ if ($sok) {
 	print &ui_table_row($text{'stat_rectime'},
 		$st{'total.recursion.time.avg'} ne '' ?
 		  sprintf("%.3f s", $st{'total.recursion.time.avg'}) : "-");
-	print &ui_table_row($text{'stat_memrrset'},
-		&nice_size($st{'mem.cache.rrset'} || 0));
-	print &ui_table_row($text{'stat_memmsg'},
-		&nice_size($st{'mem.cache.message'} || 0));
+	# Unbound only reports memory use with extended-statistics: yes, so
+	# say that instead of showing 0 bytes
+	foreach my $m ([ 'stat_memrrset', 'mem.cache.rrset' ],
+		       [ 'stat_memmsg', 'mem.cache.message' ]) {
+		print &ui_table_row($text{$m->[0]},
+			defined($st{$m->[1]}) ? &nice_size($st{$m->[1]})
+					      : "<i>$text{'stat_memnoext'}</i>");
+		}
 	print &ui_table_row($text{'stat_uptime'},
 		$st{'time.up'} ne '' ? int($st{'time.up'})." s" : "-");
 	print &ui_table_end();

@@ -17,6 +17,17 @@ foreach my $sel (@d) {
 	my $r = &find_record_by_id($id, $old) || &error($text{'record_egone'});
 	push(@recs, $r);
 	}
+# Reverse records of deleted A and AAAA records go too, unless a record that
+# stays still has the same name and address
+my %gone = map { $_->{'dir'}, 1 } @recs;
+my @left = grep { !$gone{$_->{'dir'}} } &list_local_records();
+my %ptr;
+foreach my $r (@recs) {
+	foreach my $p (&reverse_records_for($r, [ $r, @left ])) {
+		$ptr{$p->{'dir'}} ||= $p;
+		}
+	}
+push(@recs, grep { !$gone{$_->{'dir'}} } values %ptr);
 foreach my $r (@recs) {
 	&delete_directive($r->{'dir'});
 	}

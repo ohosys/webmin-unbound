@@ -41,8 +41,26 @@ if ($in{'source'} eq 'text' && $in{'format'} eq 'rr') {
 			push(@bad, [ $l, $text{'batch_edata'} ]);
 			next;
 			}
-		push(@add, [ &full_record_name($rr->{'name'}, $zname),
-			     $rr->{'type'}, $rr->{'data'}, undef, $l,
+		# Names in the record data (CNAME, NS, PTR, MX and SRV targets)
+		# follow the same rule as the record name : short names are in
+		# the selected zone, names with a dot are complete. Left as they
+		# were, Unbound would take "mail" as the top-level name "mail."
+		my @v = @{$rr->{'values'}};
+		my $ti = $rr->{'type'} =~ /^(CNAME|NS|PTR)$/ ? 0 :
+			 $rr->{'type'} eq 'MX' ? 1 :
+			 $rr->{'type'} eq 'SRV' ? 3 : -1;
+		if ($ti >= 0) {
+			if (@v != $ti+1 || !&valid_domain($v[$ti]) ||
+			    $rr->{'type'} eq 'MX' && $v[0] !~ /^\d+$/ ||
+			    $rr->{'type'} eq 'SRV' &&
+			      grep { !/^\d+$/ } @v[0..2]) {
+				push(@bad, [ $l, $text{'batch_edata'} ]);
+				next;
+				}
+			$v[$ti] = &batch_full_name($v[$ti], $zname);
+			}
+		push(@add, [ &batch_full_name($rr->{'name'}, $zname),
+			     $rr->{'type'}, join(" ", @v), undef, $l,
 			     $rr->{'ttl'} ]);
 		}
 	}
@@ -89,8 +107,7 @@ else {
 				next;
 				}
 			# Short names are put in the selected zone
-			my $full = $n =~ /\./ && $n !~ /\.$/ ? lc($n)."."
-							      : &full_record_name($n, $zname);
+			my $full = &batch_full_name($n, $zname);
 			push(@add, [ $full, &check_ipaddress($ip) ? "A" : "AAAA",
 				     $ip, $first && $in{'ptr'} ? $ip : undef,
 				     join(" ", @$h) ]);
@@ -130,14 +147,25 @@ if (!$in{'preview'}) {
 	# current config (deleting shifts line numbers, so IDs can't be reused)
 	my %replace = map { $_->[1]->[0]."/".$_->[1]->[1] => 1 }
 			  grep { $_->[0] eq 'replace' } @plan;
-	foreach my $r (&list_local_records()) {
+	my @all = &list_local_records();
+	my (@del, %delptr);
+	foreach my $r (@all) {
 		next if ($r->{'type'} eq 'REVPTR');
-		if ($replace{&canonical_name($r->{'name'})."/".$r->{'type'}}) {
-			&delete_directive($r->{'dir'});
-			}
+		push(@del, $r)
+		    if ($replace{&canonical_name($r->{'name'})."/".$r->{'type'}});
 		}
+	# Their reverse records go too, so none keep pointing at the old address
+	my %gone = map { $_->{'dir'}, 1 } @del;
+	my @left = grep { !$gone{$_->{'dir'}} } @all;
+	foreach my $r (@del) {
+		$delptr{$_->{'dir'}} ||= $_
+			foreach (&reverse_records_for($r, [ $r, @left ]));
+		}
+	my @livedel = map { &record_live_names($_) } values %delptr;
+	&delete_directive($_->{'dir'}) foreach (@del, values %delptr);
 	my @existing = &list_local_records();
-	my (@data, @ptrs, @live);
+	my (@data, @ptrs);
+	my @live = @livedel;
 	foreach my $p (@plan) {
 		next if ($p->[0] ne 'add' && $p->[0] ne 'replace');
 		my $a = $p->[1];
@@ -207,3 +235,14 @@ if ($in{'preview'}) {
 	}
 &ui_print_footer("edit_local.cgi?zone=".&urlize($zname), $text{'local_return'},
 		 "index.cgi?mode=local", $text{'index_return'});
+
+# batch_full_name(name, zone)
+# Short names (no dot) are in the zone, names with a dot are complete, as the
+# import page says : "nas" becomes nas.<zone>, "nas.casa.lan" stays as it is.
+# Service names like _sip._tcp, whose last label starts with _, are in the zone.
+sub batch_full_name
+{
+my ($n, $zone) = @_;
+return lc($n)."." if ($n =~ /\./ && $n !~ /\.$/ && $n !~ /(^|\.)_[^\.]*$/);
+return &full_record_name($n, $zone);
+}

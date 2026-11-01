@@ -14,6 +14,7 @@ if (!$in{'new'}) {
 
 if ($in{'delete'}) {
 	&delete_clause($c);
+	&drop_unused_respip();
 	&commit_change();
 	&restart_needed(1);
 	&webmin_log("delete", "rpz", $in{'old'});
@@ -46,6 +47,10 @@ if (!$in{'zonefile_def'}) {
 	$zf =~ /^\/[^\s"'#]+$/ || &error($text{'auth_ezonefile'});
 	}
 @urls || @prims || $zf ne '' || &error($text{'auth_enone'});
+# With no primary or URL to fetch it from, Unbound must read the zone file at
+# startup, and fails to start (or to reload) when it is missing
+!@prims && !@urls && !&zone_file_present($zf) &&
+	&error(&text('auth_enofile', &html_escape($zf)));
 @urls && $zf eq '' && &error($text{'rpz_eurlfile'});
 my $act = $in{'action'};
 $act eq '' || &indexof($act, "nxdomain", "nodata", "passthru", "drop",
