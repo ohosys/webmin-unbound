@@ -57,6 +57,14 @@ foreach my $f ('prime', 'first', 'tls', 'nocache') {
 	$in{$f} eq '' || $in{$f} eq 'yes' || $in{$f} eq 'no' ||
 		&error($text{'fwd_eyesno'});
 	}
+# A #name after an address is the TLS authentication name, which Unbound only
+# uses over TLS : without it the queries go in plain text to that port (often
+# 853, where nothing answers plain DNS)
+if (grep { /#/ } (@addrs, @hosts)) {
+	my $tls = $in{'tls'} eq 'yes' ||
+		  $in{'tls'} eq '' && &find_server_value("tls-upstream") eq 'yes';
+	$tls || &error($text{'fwd_etlsauth'});
+	}
 
 # Build the directive list
 my @dirs = ( [ "name", &quote_value($name, 1) ] );

@@ -16,6 +16,9 @@ ok(&find_server_value("do-ip6") eq "no", "clause continues after include");
 my ($ld) = &find_server("local-data");
 ok($ld->{'values'}->[0] eq 'a.x. IN TXT "has # hash"', "hash inside quotes is not a comment");
 ok($ld->{'comment'} eq "# c2", "trailing comment kept");
+my @sc = &split_comment("\tforward-addr: 9.9.9.9@853#dns.quad9.net # q9");
+ok($sc[0] eq "\tforward-addr: 9.9.9.9@853#dns.quad9.net " && $sc[1] eq "# q9",
+   "# inside a word is the TLS name, not a comment");
 ok(join(",", map { $_->{'name'} } &list_zone_clauses("forward-zone")) eq "one.,two.", "forward zones");
 # Writes
 &begin_change();

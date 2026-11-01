@@ -8,8 +8,11 @@ require './pihole-lib.pl';
 &can_edit('pihole') || &error($text{'pihole_ecannot'});
 
 my $on = $in{'enable'} ? 1 : 0;
-my $timer = !$on && $in{'timer'} =~ /^\d+$/ && $in{'timer'} > 0 ?
-		int($in{'timer'}) : undef;
+# An unreadable time must not turn blocking off for good : only an empty
+# value or 0 means "until turned back on"
+!$on && $in{'timer'} ne '' && $in{'timer'} !~ /^\d+$/ &&
+	&error($text{'pihole_etimer'});
+my $timer = !$on && $in{'timer'} > 0 ? int($in{'timer'}) : undef;
 my ($d, $err) = &pihole_api("POST", "/dns/blocking",
 	{ 'blocking' => $on ? \1 : \0,
 	  'timer' => $timer });

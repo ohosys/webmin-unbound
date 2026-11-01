@@ -156,7 +156,10 @@ return { 'name' => $name,
 }
 
 # split_comment(line)
-# Splits a line into the code part and a trailing # comment, honouring quotes
+# Splits a line into the code part and a trailing # comment, honouring quotes.
+# Like Unbound's own parser, a # only starts a comment at the beginning of a
+# word : in "forward-addr: 9.9.9.9@853#dns.quad9.net" it is part of the value
+# (the TLS authentication name), not a comment.
 sub split_comment
 {
 my ($l) = @_;
@@ -169,7 +172,7 @@ for(my $i=0; $i<length($l); $i++) {
 	elsif ($c eq '"' || $c eq "'") {
 		$q = $c;
 		}
-	elsif ($c eq '#') {
+	elsif ($c eq '#' && ($i == 0 || substr($l, $i-1, 1) =~ /\s/)) {
 		return (substr($l, 0, $i), substr($l, $i));
 		}
 	}
@@ -1071,6 +1074,25 @@ foreach my $d (&find_server("local-data-ptr")) {
 		    'dir' => $d });
 	}
 return @rv;
+}
+
+# reverse_records_for(&record, [&records])
+# Returns the local-data-ptr records that belong to an A or AAAA record (as
+# made by "also create a reverse record") : same address, pointing at its name.
+# None are returned while another record with that name and address remains.
+sub reverse_records_for
+{
+my ($r, $recs) = @_;
+return ( ) if ($r->{'type'} ne 'A' && $r->{'type'} ne 'AAAA');
+my $rev = &reverse_name($r->{'values'}->[0]);
+my $name = &canonical_name($r->{'name'});
+$recs ||= [ &list_local_records() ];
+return ( ) if (grep { $_->{'dir'} ne $r->{'dir'} &&
+		      $_->{'type'} eq $r->{'type'} &&
+		      &reverse_name($_->{'values'}->[0]) eq $rev &&
+		      &canonical_name($_->{'name'}) eq $name } @$recs);
+return grep { $_->{'type'} eq 'REVPTR' && &reverse_name($_->{'ip'}) eq $rev &&
+	      &canonical_name($_->{'name'}) eq $name } @$recs;
 }
 
 # record_zone(&record, &zones)
@@ -2139,6 +2161,39 @@ $i = &indexof("iterator", @mods) if ($i < 0);
 $i = 0 if ($i < 0);
 splice(@mods, $i, 0, "respip");
 &save_server("module-config", [ "\"".join(" ", @mods)."\"" ]);
+}
+
+# zone_file_present(file)
+# Returns 1 if a zonefile for an auth-zone or rpz exists. Relative names are
+# looked up in Unbound's directory:, and are trusted when that isn't known.
+sub zone_file_present
+{
+my ($f) = @_;
+if ($f !~ /^\//) {
+	my $dir = &find_server_value("directory");
+	return 1 if (!$dir);
+	$f = "$dir/$f";
+	}
+my $chroot = &find_server_value("chroot");
+$f = $chroot.$f if ($chroot && $f !~ /^\Q$chroot\E\//);
+return -r $f ? 1 : 0;
+}
+
+# drop_unused_respip()
+# Undoes ensure_respip once no RPZ zone or response-ip option needs the respip
+# module any more. If what is left is Unbound's default, the line goes.
+sub drop_unused_respip
+{
+return if (&find_clauses("rpz"));
+return if (grep { &find_server($_) } ("response-ip", "response-ip-tag",
+				      "response-ip-data"));
+my $mc = &find_server_value("module-config");
+return if ($mc !~ /\brespip\b/);
+my @mods = grep { $_ ne "respip" } split(/\s+/, $mc);
+my $new = join(" ", @mods);
+&save_server("module-config",
+	     $new eq "validator iterator" || $new eq '' ? [ ]
+						       : [ "\"$new\"" ]);
 }
 
 # dnssec_probe(server, port, name)

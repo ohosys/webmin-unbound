@@ -341,7 +341,14 @@ print "$text{'pihole_qdomain'} ",&ui_textbox("qdomain", $in{'qdomain'}, 25),
 print &ui_form_end();
 
 my $qs = "/queries?length=".($in{'qstatus'} ? 1000 : $len);
-$qs .= "&domain=".&urlize($in{'qdomain'}) if ($in{'qdomain'} =~ /\S/);
+if ($in{'qdomain'} =~ /\S/) {
+	# Pi-hole matches the domain exactly unless it has a * wildcard, so a
+	# word like "youtube" finds nothing ; search for it anywhere instead
+	my $qd = $in{'qdomain'};
+	$qd =~ s/^\s+|\s+$//g;
+	$qd = "*".$qd."*" if ($qd !~ /\*/);
+	$qs .= "&domain=".&urlize($qd);
+	}
 $qs .= "&client_ip=".&urlize($in{'qclient'}) if ($in{'qclient'} =~ /\S/);
 my $ql = &pihole_get($qs) || { };
 my %blocked = map { $_, 1 } ( "GRAVITY", "REGEX", "DENYLIST",
@@ -379,7 +386,7 @@ foreach my $r (@{$ql->{'queries'} || [ ]}) {
 print &ui_columns_table([ $text{'pihole_qtime'}, $text{'record_type'},
 			  $text{'pihole_domain'}, $text{'pihole_qclient'},
 			  $text{'pihole_qstatus'}, $text{'pihole_qreply'},
-			  $text{'pihole_upstream'}, "" ],
+			  $text{'pihole_upstream'}, $text{'pihole_qaction'} ],
 			100, \@rows, undef, 0, undef, $text{'pihole_noqueries'});
 print &ui_tabs_end_tab('mode', 'queries');
 

@@ -55,8 +55,11 @@ if ($pid && &can_edit('control') && &control_available()) {
 	my $hits = $st{'total.num.cachehits'} || 0;
 	print &brand_tiles([
 		[ 'u1', &brand_number($q), $text{'stat_queries'}, 'exchange' ],
+		# Behind Pi-hole, repeated questions are answered from Pi-hole's
+		# cache and never reach Unbound, so a low rate here is normal
 		[ 'u2', $q ? &brand_pct(100*$hits/$q) : "-",
-		  $text{'stat_hits'}, 'bolt' ],
+		  &pihole_installed_quick() ? $text{'stat_hitspihole'}
+					    : $text{'stat_hits'}, 'bolt' ],
 		[ 'u3', $st{'total.recursion.time.avg'} ne '' ?
 			sprintf("%.0f ms", 1000*$st{'total.recursion.time.avg'})
 			: "-", $text{'stat_rectime'}, 'clock-o' ],

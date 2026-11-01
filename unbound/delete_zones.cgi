@@ -29,6 +29,17 @@ foreach my $name (@d) {
 							     : $t."-zone";
 		my $c = &find_zone_clause($ctype, $name) || next;
 		&delete_clause($c);
+		if ($t eq 'forward' || $t eq 'stub') {
+			# Like save_fwd.cgi, don't leave behind settings that
+			# only existed for this zone
+			my $zn = &canonical_name($name);
+			if ($zn ne '.' &&
+			    !&find_zone_clause($t eq 'forward' ? "stub-zone"
+							      : "forward-zone", $zn)) {
+				&set_domain_listed("private-domain", $zn, 0);
+				&set_domain_listed("domain-insecure", $zn, 0);
+				}
+			}
 		if ($t eq 'views') {
 			# Also stop sending clients to the deleted view
 			&save_server("access-control-view",
@@ -39,6 +50,7 @@ foreach my $name (@d) {
 			}
 		}
 	}
+&drop_unused_respip() if ($t eq 'rpz');
 &commit_change();
 &restart_needed(1) if ($t eq 'rpz');
 if ($t eq 'local') {
