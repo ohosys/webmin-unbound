@@ -14,3 +14,5 @@ forwarder_flush=Svuotare la cache di Pi-hole o dnsmasq dopo le modifiche (quando
 pihole_api=Indirizzo dell'API di Pi-hole su questo sistema,3,Da pihole.toml
 unbound_addr=Indirizzo di Unbound usato da Pi-hole (es. 127.0.0.1#5335 o :5335),3,Dalla configurazione di Unbound
 pihole_queries=Query mostrate nel registro di Pi-hole,0,5
+apply_rollback=Se Unbound si ferma dopo l'applicazione, rimettere l'ultima configurazione funzionante?,1,1-Sì,0-No
+pihole_filedirs=Cartelle consentite per le liste Pi-hole file://,0,40

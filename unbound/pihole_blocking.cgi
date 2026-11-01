@@ -6,6 +6,7 @@ require './pihole-lib.pl';
 &ReadParse();
 &error_setup($text{'pihole_err'});
 &can_edit('pihole') || &error($text{'pihole_ecannot'});
+&pihole_require_post();
 
 my $on = $in{'enable'} ? 1 : 0;
 # An unreadable time must not turn blocking off for good : only an empty

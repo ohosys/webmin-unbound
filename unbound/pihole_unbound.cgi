@@ -7,6 +7,7 @@ require './pihole-lib.pl';
 &ReadParse();
 &error_setup($text{'pihole_err'});
 &can_edit('pihole') || &error($text{'pihole_ecannot'});
+&pihole_require_post();
 my $want = &unbound_upstream() || &error($text{'pihole_nolisten'});
 
 my ($path, $old, $new);

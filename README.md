@@ -312,9 +312,27 @@ browser reale (pagine BIND, DNS client, Status e DHCP, e quelle di questo modulo
   standard non verificati (quello per RedHat è stato provato su Rocky 9).
 
 ## Test eseguiti
-**Versione 2.0.** Correzioni alla diagnostica e test automatici, nessuna nuova funzione
+**Versione 2.0.** Applica configurazione più sicura, correzioni e test automatici
 (il numero passa da 1.9 a 2.0 e non a 1.10 perché Webmin confronta le versioni come
 numeri decimali, e 1.10 risulterebbe più vecchia di 1.9).
+*Applica configurazione* è sicuro anche quando Unbound è l'unico DNS della rete: se
+Unbound si ferma dopo aver caricato la nuova configurazione, il modulo rimette l'ultima
+con cui funzionava, lo riavvia e conserva quella sbagliata in `/etc/webmin/unbound/failed`.
+Provato con un Unbound vero (`tests/rollback.pl`). Le modifiche a indirizzi, porte,
+protocolli, utente o chroot fanno riavviare Unbound invece di ricaricarlo: con il reload
+Unbound tiene le vecchie porte e un indirizzo sbagliato si scopriva solo al riavvio successivo.
+Una zona autoritativa o RPZ con un file di zona inesistente viene rifiutata.
+Pi-hole: le pagine che modificano qualcosa accettano solo richieste POST dal proprio modulo
+(*Consenti* e *Blocca* nel registro delle query sono ora pulsanti), le liste `file://` devono
+stare in `/etc/pihole` (o nelle cartelle indicate nella configurazione del modulo), un tempo
+non valido per la pausa del blocco viene rifiutato e il filtro del registro cerca il testo
+in qualsiasi punto del nome.
+Corretti anche: i record PTR restavano orfani quando si modificava o cancellava il record A;
+l'import in formato record trasformava `nas.lan` in `nas.lan.lan.`; il nome TLS in
+`9.9.9.9@853#dns.quad9.net` spariva al salvataggio successivo; cancellando zone restavano
+righe `private-domain`, `domain-insecure` e `respip`; un salvataggio fallito lasciava un
+`webmin.conf` vuoto. I controlli di rendering dei test passavano sempre per un errore nel
+test stesso: ora falliscono davvero e ne sono stati aggiunti altri.
 *Controlla configurazione* non dice più che il sistema scavalca Pi-hole quando
 `/etc/resolv.conf` non ha righe `nameserver` (in quel caso il sistema usa il server
 locale); l'avviso sui buffer indica `/usr/sbin/sysctl` e il riavvio di Unbound; il

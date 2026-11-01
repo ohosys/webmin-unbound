@@ -6,6 +6,7 @@ require './pihole-lib.pl';
 &ReadParse();
 &error_setup($text{'pihole_err'});
 &can_edit('pihole') || &error($text{'pihole_ecannot'});
+&pihole_require_post();
 
 if ($in{'action'} eq 'restartdns') {
 	my ($d, $err) = &pihole_api("POST", "/action/restartdns");

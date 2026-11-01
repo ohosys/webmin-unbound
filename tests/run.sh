@@ -11,5 +11,6 @@ perl "$here/labels.pl" || rc=1
 perl "$here/resolver.pl" || rc=1
 perl "$here/cgi.pl" || rc=1
 perl "$here/pihole.pl" || rc=1
+perl "$here/rollback.pl" || rc=1
 rm -rf "$tmp"
 exit $rc

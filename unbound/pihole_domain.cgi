@@ -6,9 +6,17 @@ require './pihole-lib.pl';
 &ReadParse();
 &error_setup($text{'pihole_derr'});
 &can_edit('pihole') || &error($text{'pihole_ecannot'});
+&pihole_require_post();
 
+if ($in{'quick'}) {
+	# Allow or deny button next to a query or a search result
+	my ($type, $kind, $dom) = split(/\//, $in{'quick'}, 3);
+	$in{'add'} = 1;
+	$in{'list'} = "$type/$kind";
+	$in{'domain'} = $dom;
+	}
 my $back = $in{'return'} =~ /^(queries|domains)$/ ? $in{'return'} :
-	   $ENV{'REQUEST_METHOD'} eq 'GET' ? 'queries' : 'domains';
+	   'domains';
 if ($in{'add'}) {
 	$in{'list'} =~ /^(allow|deny)\/(exact|regex)$/ ||
 		&error($text{'pihole_elist'});

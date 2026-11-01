@@ -30,7 +30,7 @@ our @record_types = ( "A", "AAAA", "CNAME", "MX", "TXT", "PTR", "SRV", "NS",
 		      "CAA" );
 
 our ($config_loaded, @config_cache, @config_files, @config_includes);
-our (%change_backup, %change_created, $change_active);
+our (%change_backup, %change_created, $change_active, $in_apply, $change_sockets);
 our ($dns_forwarder_cache);
 
 ######################################################################
@@ -486,17 +486,11 @@ my $f = $config{'add_file'};
 $f =~ s/^\s+|\s+$//g;
 my @cands = $f ? ( $f ) : ( );
 push(@cands, map { $_."/webmin.conf" } &included_conf_dirs());
+# A file that doesn't exist yet is only created when something is written to
+# it, so pages that fail or change nothing don't leave an empty file behind
 foreach my $c (&unique(@cands)) {
 	next if (!&file_is_included($c));
-	if (!-e $c) {
-		&lock_file($c);
-		&open_tempfile(ADDFILE, ">$c", 0, 1);
-		&close_tempfile(ADDFILE);
-		&unlock_file($c);
-		$change_created{$c} = 1 if ($change_active);
-		&clear_config_cache();
-		}
-	return $c if (&indexof($c, &get_config_files()) >= 0);
+	return $c if (!-e $c || &indexof($c, &get_config_files()) >= 0);
 	}
 return &get_config_file();
 }
@@ -614,9 +608,12 @@ sub begin_change
 $change_active = 1;
 %change_backup = ( );
 %change_created = ( );
-&get_add_file();
-foreach my $f (&get_config_files()) {
+&save_good_config() if (!-r &good_config_dir()."/index" &&
+			&is_unbound_running() && !&restart_needed());
+$change_sockets = &socket_settings();
+foreach my $f (&unique(&get_config_files(), &get_add_file())) {
 	&lock_file($f);
+	$change_created{$f} = 1 if (!-e $f);
 	$change_backup{$f} = -e $f ? &read_file_contents($f) : undef;
 	}
 }
@@ -639,6 +636,12 @@ if (!$nocheck && $config{'check_on_save'} ne '0') {
 		       &html_escape(join("\n", @errs))."</pre>");
 		}
 	}
+# A reload keeps the old sockets, so a new address or port would only fail at
+# the next restart (like a reboot). Restart now, while the last good
+# configuration can still be put back.
+&clear_config_cache();
+&restart_needed(1) if (defined($change_sockets) &&
+		       &socket_settings() ne $change_sockets);
 # Don't leave behind an add file that this change created but didn't use
 foreach my $f (keys %change_created) {
 	&unlink_file($f) if (-e $f && !-s $f);
@@ -648,6 +651,18 @@ $change_active = 0;
 &clear_config_cache();
 }
 
+# socket_settings()
+# Returns the server: options that only a full restart applies, as one string
+sub socket_settings
+{
+return join("\n", map { my $n = $_;
+			  $n."=".join(" ", map { @{$_->{'values'}} }
+					       &find_server($n)) }
+	qw(interface ip-address interface-automatic port do-ip4 do-ip6
+	   do-udp do-tcp tls-port https-port quic-port outgoing-interface
+	   so-reuseport num-threads username chroot));
+}
+
 # rollback_change()
 # Restores the config files saved by begin_change
 sub rollback_change
@@ -655,7 +670,7 @@ sub rollback_change
 foreach my $f (keys %change_backup) {
 	delete($main::file_cache{$f});
 	if ($change_created{$f}) {
-		&unlink_file($f);
+		&unlink_file($f) if (-e $f);
 		}
 	elsif (defined($change_backup{$f})) {
 		&open_tempfile(RESTORE, ">$f", 0, 1);
@@ -735,7 +750,8 @@ return &find_server_value("pidfile") || $config{'pid_file'};
 sub is_unbound_running
 {
 my $pid = &check_pid_file(&get_pid_file());
-return $pid if ($pid);
+# A server that just exited can linger as a zombie that kill 0 still finds
+return $pid if ($pid && !&is_zombie($pid));
 # No usable PID file, so look for the process by name. Only trust exact
 # matches that are still alive, because kernel threads like
 # "kworker/..-events_unbound" and zombie processes also match the name.
@@ -746,6 +762,16 @@ foreach my $p (&find_byname("unbound")) {
 	return $p if ($1 eq "unbound" && $2 ne "Z" && $2 ne "X");
 	}
 return 0;
+}
+
+# is_zombie(pid)
+# Returns 1 if a process has exited but was not yet reaped by its parent
+sub is_zombie
+{
+my ($pid) = @_;
+my $stat = &read_file_contents("/proc/$pid/stat");
+return 0 if (!$stat);
+return $stat =~ /^\d+\s+\(.*\)\s+([ZX])/ ? 1 : 0;
 }
 
 # control_command(command, [arg, ...])
@@ -799,7 +825,11 @@ return $text{'start_ealready'} if (&is_unbound_running());
 my $cerr = &port_conflict_error();
 return $cerr if ($cerr);
 my $err = &start_unbound_real();
-&forwarder_changed() if (!$err);
+if (!$err) {
+	# During an apply, apply_configuration decides what counts as good
+	&save_good_config() if (!$in_apply && &still_running());
+	&forwarder_changed();
+	}
 return $err;
 }
 
@@ -886,9 +916,102 @@ return -e $file ? 1 : 0;
 # success or an error message.
 sub apply_configuration
 {
+my $was = &is_unbound_running();
+local $in_apply = 1;
 my $err = &apply_configuration_real();
-&forwarder_changed() if (!$err);
+if ($was && !&still_running()) {
+	# The new configuration stopped Unbound, and with it every client that
+	# uses it for DNS. Go back to the last one it ran with.
+	$err ||= $text{'apply_edied'};
+	return $err if ($config{'apply_rollback'} eq '0');
+	my $rerr = &rollback_to_good_config();
+	return $err."<p>".($rerr ? &text('apply_erollfail', $rerr)
+				 : &text('apply_rolledback',
+					 "<tt>".&failed_config_dir()."</tt>"));
+	}
+if (!$err) {
+	&save_good_config();
+	&forwarder_changed();
+	}
 return $err;
+}
+
+# still_running()
+# Waits a few seconds and returns 1 if Unbound is still running, since a bad
+# configuration can make it exit only after the reload was accepted
+sub still_running
+{
+for(my $i=0; $i<3; $i++) {
+	sleep(1);
+	return 0 if (!&is_unbound_running());
+	}
+return &is_unbound_running() ? 1 : 0;
+}
+
+# good_config_dir()
+# Directory with a copy of the config files Unbound last ran with
+sub good_config_dir
+{
+return "$module_config_directory/lastgood";
+}
+
+# failed_config_dir()
+# Directory with a copy of the config files that stopped Unbound
+sub failed_config_dir
+{
+return "$module_config_directory/failed";
+}
+
+# save_good_config([dir])
+# Copies all config files, as a set Unbound has run with
+sub save_good_config
+{
+my ($dir) = @_;
+$dir ||= &good_config_dir();
+my $new = $dir.".new";
+&system_logged("rm -rf ".quotemeta($new)) if (-e $new);
+&make_dir($new, 0700) || return 0;
+my %idx;
+my $i = 0;
+foreach my $f (&get_config_files()) {
+	next if (!-f $f);
+	my $n = "f".$i++;
+	&copy_source_dest($f, "$new/$n") || return 0;
+	$idx{$n} = $f;
+	}
+&write_file("$new/index", \%idx);
+&system_logged("rm -rf ".quotemeta($dir)) if (-e $dir);
+return &rename_file($new, $dir);
+}
+
+# rollback_to_good_config()
+# Puts back the config files Unbound last ran with, keeping the ones that
+# failed, and starts it again. Returns undef on success or an error message.
+sub rollback_to_good_config
+{
+my $dir = &good_config_dir();
+my %idx;
+&read_file("$dir/index", \%idx) || return $text{'apply_enogood'};
+&save_good_config(&failed_config_dir());
+my %keep = reverse(%idx);
+foreach my $f (&get_config_files()) {
+	# Files added since then, like a new webmin.conf
+	next if ($keep{$f} || !-f $f);
+	&lock_file($f);
+	&unlink_file($f);
+	&unlock_file($f);
+	}
+foreach my $n (keys %idx) {
+	my $f = $idx{$n};
+	&lock_file($f);
+	&copy_source_dest("$dir/$n", $f);
+	&unlock_file($f);
+	delete($main::file_cache{$f});
+	}
+&clear_config_cache();
+&webmin_log("rollback");
+return undef if (&is_unbound_running());
+return &start_unbound();
 }
 
 sub apply_configuration_real

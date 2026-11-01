@@ -12,6 +12,7 @@ if ($in{'add'} && $ENV{'REQUEST_METHOD'} eq 'GET') {
 	&redirect("pihole.cgi?mode=clients&client=".&urlize($in{'client'}));
 	exit;
 	}
+&pihole_require_post();
 if ($in{'add'}) {
 	my $c = $in{'client'};
 	$c =~ s/^\s+|\s+$//g;
