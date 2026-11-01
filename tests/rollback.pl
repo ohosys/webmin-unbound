@@ -58,6 +58,11 @@ kill('TERM', $pid) if ($pid);
 sleep(1);
 }
 
+if (&is_unbound_running()) {
+	# Never stop a real DNS server ; the test needs Unbound to itself
+	print "another Unbound is running here, so the rollback test is skipped\n";
+	exit(0);
+	}
 my $err = &start_unbound();
 if ($err && $err =~ /Permission denied/) {
 	# AppArmor (Ubuntu) only lets Unbound read its own directories
