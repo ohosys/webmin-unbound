@@ -28,3 +28,8 @@ if [ ! -s /var/lib/unbound/root.key ] && [ -s /usr/share/dns/root.key ]; then
 	mkdir -p /var/lib/unbound
 	cp /usr/share/dns/root.key /var/lib/unbound/root.key
 fi
+# Ubuntu's AppArmor profile only lets Unbound read its own directories, but
+# tests/rollback.pl runs it on a scratch configuration in /tmp
+if [ -e /etc/apparmor.d/usr.sbin.unbound ] && command -v apparmor_parser >/dev/null; then
+	apparmor_parser -R /etc/apparmor.d/usr.sbin.unbound 2>/dev/null || true
+fi

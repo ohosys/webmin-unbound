@@ -59,6 +59,11 @@ sleep(1);
 }
 
 my $err = &start_unbound();
+if ($err && $err =~ /Permission denied/) {
+	# AppArmor (Ubuntu) only lets Unbound read its own directories
+	print "Unbound may not read $tmp here (AppArmor?), so the rollback test is skipped\n";
+	exit(0);
+	}
 ok(!$err, "Unbound starts on the scratch configuration") || print "$err\n";
 ok(-r "$module_config_directory/lastgood/index", "a working start is saved as the last good configuration");
 
