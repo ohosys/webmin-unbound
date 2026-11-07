@@ -36,6 +36,16 @@ It is integrated with the rest of Webmin like an official module:
 - **Configuration backup**.
 - **Network Configuration**: sets the system resolver.
 
+## Screenshots
+
+Sample data only (home.arpa, private addresses, example domains); click an image to enlarge it.
+
+<table>
+<tr><td width="50%" valign="top"><a href="docs/screenshots/01-unbound-main.png"><img src="docs/screenshots/01-unbound-main.png" alt="Main page: status, statistics, settings and local zones"></a><br><sub>Main page: status, statistics, settings and local zones</sub></td><td width="50%" valign="top"><a href="docs/screenshots/02-local-zone-records.png"><img src="docs/screenshots/02-local-zone-records.png" alt="Records of a local zone, with their reverse (PTR) records"></a><br><sub>Records of a local zone, with their reverse (PTR) records</sub></td></tr>
+<tr><td width="50%" valign="top"><a href="docs/screenshots/03-pihole-status.png"><img src="docs/screenshots/03-pihole-status.png" alt="Pi-hole status: counters, top domains, clients and upstream servers"></a><br><sub>Pi-hole status: counters, top domains, clients and upstream servers</sub></td><td width="50%" valign="top"><a href="docs/screenshots/04-pihole-unbound-link.png"><img src="docs/screenshots/04-pihole-unbound-link.png" alt="Pi-hole and Unbound link: the query path and its checks"></a><br><sub>Pi-hole and Unbound link: the query path and its checks</sub></td></tr>
+<tr><td width="50%" valign="top"><a href="docs/screenshots/05-pihole-query-log.png"><img src="docs/screenshots/05-pihole-query-log.png" alt="Pi-hole query log, with Allow and Deny buttons"></a><br><sub>Pi-hole query log, with Allow and Deny buttons</sub></td><td width="50%" valign="top"><a href="docs/screenshots/06-cache-statistics.png"><img src="docs/screenshots/06-cache-statistics.png" alt="Unbound cache and statistics"></a><br><sub>Unbound cache and statistics</sub></td></tr>
+</table>
+
 ## Installation
 
 1. Webmin → *Webmin Configuration* → *Webmin Modules* → *Install Module*, then:
@@ -479,6 +489,7 @@ unbound/
   lang/en, lang/it, config-<os>, config.info(.it), module.info, defaultacl
   images/                page icons (from the bind8 module), SVG logo and marks
 branding/                project logo (SVG, PNG 512) and banner
+docs/screenshots/        screenshots used in this README
 .github/                 automatic tests (GitHub Actions) and release publishing
 tests/                   parser, JSON, resolver, button label and page tests (tests/run.sh)
 ```

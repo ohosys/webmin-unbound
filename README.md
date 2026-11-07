@@ -36,6 +36,16 @@ Pi-hole è facoltativo: senza, il modulo gestisce solo Unbound.
 - **Backup della configurazione**.
 - **Configurazione di rete**: imposta il resolver di sistema.
 
+## Screenshot
+
+Solo dati di esempio (home.arpa, indirizzi privati, domini di esempio); clicca su un'immagine per ingrandirla.
+
+<table>
+<tr><td width="50%" valign="top"><a href="docs/screenshots/01-unbound-main.png"><img src="docs/screenshots/01-unbound-main.png" alt="Pagina principale: stato, statistiche, impostazioni e zone locali"></a><br><sub>Pagina principale: stato, statistiche, impostazioni e zone locali</sub></td><td width="50%" valign="top"><a href="docs/screenshots/02-local-zone-records.png"><img src="docs/screenshots/02-local-zone-records.png" alt="Record di una zona locale, con i record inversi (PTR)"></a><br><sub>Record di una zona locale, con i record inversi (PTR)</sub></td></tr>
+<tr><td width="50%" valign="top"><a href="docs/screenshots/03-pihole-status.png"><img src="docs/screenshots/03-pihole-status.png" alt="Stato di Pi-hole: contatori, domini più richiesti, client e server upstream"></a><br><sub>Stato di Pi-hole: contatori, domini più richiesti, client e server upstream</sub></td><td width="50%" valign="top"><a href="docs/screenshots/04-pihole-unbound-link.png"><img src="docs/screenshots/04-pihole-unbound-link.png" alt="Collegamento Pi-hole e Unbound: il percorso delle query e le verifiche"></a><br><sub>Collegamento Pi-hole e Unbound: il percorso delle query e le verifiche</sub></td></tr>
+<tr><td width="50%" valign="top"><a href="docs/screenshots/05-pihole-query-log.png"><img src="docs/screenshots/05-pihole-query-log.png" alt="Query log di Pi-hole, con i pulsanti Consenti e Blocca"></a><br><sub>Query log di Pi-hole, con i pulsanti Consenti e Blocca</sub></td><td width="50%" valign="top"><a href="docs/screenshots/06-cache-statistics.png"><img src="docs/screenshots/06-cache-statistics.png" alt="Cache e statistiche di Unbound"></a><br><sub>Cache e statistiche di Unbound</sub></td></tr>
+</table>
+
 ## Installazione
 
 1. Webmin → *Webmin Configuration* → *Webmin Modules* → *Install Module*, poi:
@@ -487,6 +497,7 @@ unbound/
   lang/en, lang/it, config-<os>, config.info(.it), module.info, defaultacl
   images/                icone delle pagine (dal modulo bind8), logo e marchi SVG
 branding/                logo (SVG, PNG 512) e banner del progetto
+docs/screenshots/        screenshot usati in questo README
 .github/                 test automatici (GitHub Actions) e creazione delle release
 tests/                   test del parser, del codec JSON, del resolver, dei pulsanti e delle pagine (tests/run.sh)
 ```
